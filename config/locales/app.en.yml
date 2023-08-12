@@ -1,0 +1,18 @@
+---
+en:
+  email_login:
+    passwords:
+      not_found_in_database: Invalid email or password
+      old_password_mismatch: Incorrect current password
+    registrations:
+      failed_to_sign_up: Failed to sign up
+    reset_password:
+      expired: The access token expired
+      invalid_token: The access token is invalid
+  common:
+    errors:
+      record_not_uniq_error: Record not uniq
+      token:
+        inactive: Your account is not activated yet
+        locked: Your account is locked
+      unauthorized_error: Unauthorized
