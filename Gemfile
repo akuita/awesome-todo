@@ -23,7 +23,7 @@ gem 'jbuilder', '~> 2.11.5'
 # jitera-hook-for-jwt
 gem 'kaminari'
 gem 'lograge'
-gem 'pg', '~> 1.2'
+gem 'pg', '~> 1.5.3'
 gem 'puma', '~> 5.5.2'
 gem 'pundit'
 gem 'rack-cors'
