@@ -17,7 +17,8 @@ Rails.application.routes.draw do
     # The new code does not have the custom route for user registration, so we keep the existing one.
     post '/users/register', to: 'users_registrations#register'
 
-    resources :users_registrations, only: [:create]
+    resources :users_registrations, only: [:create] do
+    end
 
     resources :users_passwords, only: [:create] do
     end
@@ -27,6 +28,9 @@ Rails.application.routes.draw do
 
     resources :users_reset_password_requests, only: [:create] do
     end
+
+    # Integrating the new route for password management tool integration
+    post '/users/:user_id/password_management_tools/:tool_id/integrate', to: 'users_registrations#integrate_password_management_tool'
 
     resources :notes, only: %i[index create show update destroy] do
     end

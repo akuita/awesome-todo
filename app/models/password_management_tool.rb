@@ -7,5 +7,8 @@ class PasswordManagementTool < ApplicationRecord
   # end for validations
 
   class << self
+    def exists_with_id?(tool_id)
+      exists?(tool_id)
+    end
   end
 end

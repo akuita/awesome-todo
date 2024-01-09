@@ -46,6 +46,22 @@ class Api::UsersRegistrationsController < Api::BaseController
     end
   end
 
+  def integrate_password_management_tool
+    user = User.find_by(id: params[:user_id])
+    unless user
+      render json: { message: I18n.t('common.errors.user_not_found') }, status: :not_found and return
+    end
+
+    unless PasswordManagementTool.exists_with_id?(params[:tool_id])
+      render json: { message: I18n.t('common.errors.tool_not_found') }, status: :not_found and return
+    end
+
+    UserPasswordManagementTool.create_association(params[:user_id], params[:tool_id])
+    render json: { message: I18n.t('users_registrations.password_management_tool_integrated') }, status: :ok
+  rescue StandardError => e
+    render json: { message: e.message }, status: :unprocessable_entity
+  end
+
   private
 
   def validate_email_uniqueness

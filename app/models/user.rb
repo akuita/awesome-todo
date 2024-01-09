@@ -73,6 +73,10 @@ class User < ApplicationRecord
       false
     end
 
+    def exists_with_id?(user_id)
+      exists?(user_id)
+    end
+
     # Add class methods here, if any.
   end
 
