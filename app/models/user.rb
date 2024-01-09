@@ -1,15 +1,6 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :recoverable, :rememberable, :trackable, :lockable,
-         :validatable, :confirmable
-
-  # The `has_secure_password` line is incompatible with Devise's `:database_authenticatable` module,
-  # as they both handle password encryption and authentication. Since Devise is being used,
-  # `has_secure_password` should be removed to avoid conflicts.
-  # has_secure_password
-
-  # The `before_create :generate_confirmation_token` line is not needed because Devise's `:confirmable`
-  # module already handles confirmation token generation. Therefore, it should be removed.
-  # before_create :generate_confirmation_token
+         :validatable
 
   # validations
 
@@ -42,6 +33,15 @@ class User < ApplicationRecord
     self.reset_password_sent_at = Time.now.utc
     save(validate: false)
     raw
+  end
+
+  def confirm_email(confirmation_token)
+    return false unless self.confirmation_token == confirmation_token
+    token_valid_time = Devise.confirm_within || 2.days
+    return false if self.confirmation_sent_at < token_valid_time.ago
+
+    self.email_confirmed = true
+    save
   end
 
   class << self
