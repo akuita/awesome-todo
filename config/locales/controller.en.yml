@@ -8,4 +8,7 @@ en:
     '403': forbidden
     '404': not found
     '422': unprocessable
+    email_invalid: 'Email format is invalid'
+    email_available: 'Email is available'
+    email_in_use: 'Email is already in use'
     '500': internal server error
