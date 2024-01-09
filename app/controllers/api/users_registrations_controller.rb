@@ -3,8 +3,11 @@ class Api::UsersRegistrationsController < Api::BaseController
 
   def create
     @user = User.new(create_params)
-    @user.assign_attributes(email_confirmed: false, confirmation_token: User.generate_unique_confirmation_token, confirmation_sent_at: Time.current)
-    
+    # Assign additional attributes if they are not already set by devise
+    unless @user.respond_to?(:email_confirmed) && @user.respond_to?(:confirmation_token) && @user.respond_to?(:confirmation_sent_at)
+      @user.assign_attributes(email_confirmed: false, confirmation_token: User.generate_unique_confirmation_token, confirmation_sent_at: Time.current)
+    end
+
     if @user.save
       if Rails.env.staging?
         # to show token in staging

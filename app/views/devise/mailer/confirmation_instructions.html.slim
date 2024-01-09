@@ -1,12 +1,14 @@
-
 - require 'devise/version'
 p 
-  = t('.greeting', recipient: @resource.email)
-  = t('.resent_notice') if @token.present? && @resource.confirmation_sent_at.present?
+  = t('.greeting', recipient: @resource.email || @email)
+  - if @token.present? && @resource.confirmation_sent_at.present?
+    = t('.resent_notice')
 
 p 
   = t('.instruction')
 
 p
-  a> href="#{Rails.application.credentials.dig(:frontend_base_url)}/users/confirmations?confirmation_token=#{@token}" #{t('.action')}
+  - confirmation_url = Rails.application.credentials.dig(:frontend_base_url)
+  - confirmation_path = @resource.present? ? '/users/confirmations' : '/confirmation'
+  a> href="#{confirmation_url}#{confirmation_path}?confirmation_token=#{@token}" #{t('.action')}
 br

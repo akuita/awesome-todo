@@ -1,23 +1,25 @@
 require 'sidekiq/web'
+
 Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
-
     skip_controllers :authorizations, :applications, :authorized_applications
   end
 
   devise_for :users
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
+
   namespace :api do
     resources :users_verify_confirmation_token, only: [:create] do
     end
+
+    # The new code does not have the custom route for user registration, so we keep the existing one.
     post '/users/register', to: 'users_registrations#register'
 
-    resources :users_passwords, only: [:create] do
-    end
+    resources :users_registrations, only: [:create]
 
-    resources :users_registrations, only: [:create] do
+    resources :users_passwords, only: [:create] do
     end
 
     resources :users_verify_reset_password_requests, only: [:create] do

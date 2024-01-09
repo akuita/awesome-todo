@@ -12,6 +12,7 @@ class User < ApplicationRecord
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :email, length: { in: 0..255 }, if: :email?
 
+  validates_confirmation_of :password, if: -> { password.present? }
   validates :encrypted_password, presence: true
 
   validates :sign_in_count, numericality: { only_integer: true }
@@ -36,6 +37,7 @@ class User < ApplicationRecord
   end
 
   def regenerate_confirmation_token
+    raw, enc = nil
     loop do
       raw, enc = Devise.token_generator.generate(self.class, :confirmation_token)
       break if self.class.where(confirmation_token: enc).empty?
@@ -43,6 +45,7 @@ class User < ApplicationRecord
     self.confirmation_token = enc
     self.confirmation_sent_at = Time.now.utc
     save(validate: false)
+    raw
   end
 
   def confirm_email(confirmation_token)
