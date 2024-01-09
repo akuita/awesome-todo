@@ -35,6 +35,16 @@ class User < ApplicationRecord
     raw
   end
 
+  def regenerate_confirmation_token
+    loop do
+      raw, enc = Devise.token_generator.generate(self.class, :confirmation_token)
+      break if self.class.where(confirmation_token: enc).empty?
+    end
+    self.confirmation_token = enc
+    self.confirmation_sent_at = Time.now.utc
+    save(validate: false)
+  end
+
   def confirm_email(confirmation_token)
     return false unless self.confirmation_token == confirmation_token
     token_valid_time = Devise.confirm_within || 2.days

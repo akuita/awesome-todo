@@ -1,6 +1,8 @@
+
 - require 'devise/version'
 p 
-  = t('.greeting', recipient: @email)
+  = t('.greeting', recipient: @resource.email)
+  = t('.resent_notice') if @token.present? && @resource.confirmation_sent_at.present?
 
 p 
   = t('.instruction')

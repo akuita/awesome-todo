@@ -1,3 +1,4 @@
+
 en:
   activerecord:
     attributes:
@@ -48,6 +49,11 @@ en:
       unconfirmed: You have to confirm your email address before continuing.
     mailer:
       confirmation_instructions:
+        subject: 'Confirmation instructions'
+        action: 'Confirm my account'
+        instruction: 'Please click the button below to confirm your email address.'
+        instruction_2: 'If you did not request this, please ignore this email.'
+        resend: 'You have requested to resend confirmation instructions. Please check your email.'
         action: Verify email
         greeting: Hi %{recipient},
         instruction: Thanks for registering an account on Jitera! Before we get started, we just need to confirm that this is you.

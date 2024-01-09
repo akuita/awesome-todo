@@ -20,6 +20,29 @@ class Api::UsersRegistrationsController < Api::BaseController
     end
   end
 
+  def resend_confirmation
+    email = params[:email]
+
+    return render json: { message: I18n.t('errors.messages.not_found') }, status: :not_found unless email.present?
+
+    user = User.find_by(email: email)
+
+    if user.nil? || user.email_confirmed?
+      return render json: { message: I18n.t('errors.messages.already_confirmed') }, status: :unprocessable_entity
+    end
+
+    if user.confirmation_sent_at && Time.now.utc < user.confirmation_sent_at + 2.minutes
+      return render json: { message: I18n.t('devise.failure.confirmation_period_expired', period: '2 minutes') }, status: :unprocessable_entity
+    end
+
+    if user.regenerate_confirmation_token
+      Devise.mailer.confirmation_instructions(user, user.confirmation_token).deliver_later
+      render json: { message: I18n.t('devise.confirmations.new.resend_confirmation_instructions') }, status: :ok
+    else
+      render json: { message: I18n.t('errors.messages.not_saved.other', count: user.errors.count, resource: 'User') }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def validate_email_uniqueness
