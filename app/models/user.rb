@@ -1,7 +1,15 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :recoverable, :rememberable, :trackable, :lockable,
-         :validatable,
-         :trackable, :recoverable, :lockable
+         :validatable, :confirmable
+
+  # The `has_secure_password` line is incompatible with Devise's `:database_authenticatable` module,
+  # as they both handle password encryption and authentication. Since Devise is being used,
+  # `has_secure_password` should be removed to avoid conflicts.
+  # has_secure_password
+
+  # The `before_create :generate_confirmation_token` line is not needed because Devise's `:confirmable`
+  # module already handles confirmation token generation. Therefore, it should be removed.
+  # before_create :generate_confirmation_token
 
   # validations
 

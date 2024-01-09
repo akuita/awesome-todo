@@ -1,9 +1,10 @@
-
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_uniqueness, only: :create
 
   def create
     @user = User.new(create_params)
+    @user.assign_attributes(email_confirmed: false, confirmation_token: User.generate_unique_confirmation_token, confirmation_sent_at: Time.current)
+    
     if @user.save
       if Rails.env.staging?
         # to show token in staging

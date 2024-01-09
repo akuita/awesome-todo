@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   namespace :api do
     resources :users_verify_confirmation_token, only: [:create] do
     end
+    post '/users/register', to: 'users_registrations#register'
 
     resources :users_passwords, only: [:create] do
     end
