@@ -1,3 +1,5 @@
+# typed: strict
+
 class EmailConfirmation < ApplicationRecord
   # associations
   belongs_to :user
