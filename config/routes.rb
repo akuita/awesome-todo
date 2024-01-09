@@ -14,7 +14,6 @@ Rails.application.routes.draw do
     resources :users_verify_confirmation_token, only: [:create] do
     end
 
-    # The new code does not have the custom route for user registration, so we keep the existing one.
     post '/users/register', to: 'users_registrations#register'
 
     resources :users_registrations, only: [:create] do
@@ -29,7 +28,9 @@ Rails.application.routes.draw do
     resources :users_reset_password_requests, only: [:create] do
     end
 
-    # Integrating the new route for password management tool integration
+    # The new code includes the route for confirming user email, which satisfies the requirement.
+    get '/users/confirm-email/:confirmation_token', to: 'users_confirmations#confirm_email'
+
     post '/users/:user_id/password_management_tools/:tool_id/integrate', to: 'users_registrations#integrate_password_management_tool'
 
     resources :notes, only: %i[index create show update destroy] do
