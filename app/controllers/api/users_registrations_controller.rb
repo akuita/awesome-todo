@@ -1,16 +1,15 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_uniqueness, only: :create
+  before_action :validate_email_format, only: :resend_confirmation
 
   def create
     @user = User.new(create_params)
-    # Assign additional attributes if they are not already set by devise
     unless @user.respond_to?(:email_confirmed) && @user.respond_to?(:confirmation_token) && @user.respond_to?(:confirmation_sent_at)
       @user.assign_attributes(email_confirmed: false, confirmation_token: User.generate_unique_confirmation_token, confirmation_sent_at: Time.current)
     end
 
     if @user.save
       if Rails.env.staging?
-        # to show token in staging
         token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
         render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
       else
@@ -26,23 +25,21 @@ class Api::UsersRegistrationsController < Api::BaseController
   def resend_confirmation
     email = params[:email]
 
-    return render json: { message: I18n.t('errors.messages.not_found') }, status: :not_found unless email.present?
-
     user = User.find_by(email: email)
 
-    if user.nil? || user.email_confirmed?
-      return render json: { message: I18n.t('errors.messages.already_confirmed') }, status: :unprocessable_entity
-    end
-
-    if user.confirmation_sent_at && Time.now.utc < user.confirmation_sent_at + 2.minutes
-      return render json: { message: I18n.t('devise.failure.confirmation_period_expired', period: '2 minutes') }, status: :unprocessable_entity
+    if user.nil?
+      render json: { message: I18n.t('errors.messages.not_found') }, status: :not_found and return
+    elsif user.email_confirmed?
+      render json: { message: I18n.t('errors.messages.already_confirmed') }, status: :unprocessable_entity and return
+    elsif user.confirmation_sent_at && Time.current < user.confirmation_sent_at + 2.minutes
+      render json: { message: I18n.t('devise.failure.confirmation_period_expired', period: '2 minutes') }, status: :too_many_requests and return
     end
 
     if user.regenerate_confirmation_token
       Devise.mailer.confirmation_instructions(user, user.confirmation_token).deliver_later
-      render json: { message: I18n.t('devise.confirmations.new.resend_confirmation_instructions') }, status: :ok
+      render json: { status: 200, message: I18n.t('devise.confirmations.new.resend_confirmation_instructions') }, status: :ok
     else
-      render json: { message: I18n.t('errors.messages.not_saved.other', count: user.errors.count, resource: 'User') }, status: :unprocessable_entity
+      render json: { message: I18n.t('errors.messages.not_saved.other', count: user.errors.count, resource: 'User') }, status: :unprocessable_entity if user.errors.any?
     end
   end
 
@@ -68,6 +65,13 @@ class Api::UsersRegistrationsController < Api::BaseController
     if User.find_by(email: create_params[:email])
       render json: { error_messages: [I18n.t('errors.messages.email_taken')], message: I18n.t('devise.failure.invalid', authentication_keys: 'Email') }, status: :unprocessable_entity
       return
+    end
+  end
+
+  def validate_email_format
+    email = params[:email]
+    unless email =~ URI::MailTo::EMAIL_REGEXP
+      render json: { message: "Enter a valid email address." }, status: :bad_request and return
     end
   end
 
