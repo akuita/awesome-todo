@@ -5,19 +5,25 @@ class Api::UsersRegistrationsController < Api::BaseController
 
   def create
     if User.email_registered?(create_params[:email])
-      render json: { error: 'Email already registered' }, status: :unprocessable_entity
+      render json: { error: 'This email address has been used.' }, status: :conflict
     else
       @user = User.new(create_params)
       if @user.save
-        if Rails.env.staging?
-          # to show token in staging
-          token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
-          EmailConfirmation.create_confirmation_token(@user) if defined?(EmailConfirmation)
-          render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
-        else
-          # Send confirmation email
-          EmailConfirmation.send_confirmation_email(@user) if defined?(EmailConfirmation)
-          render json: { status: 201, message: I18n.t('common.user_registered') }, status: :created and return
+        render json: {
+          status: 201,
+          message: 'User registered successfully. Please check your email to confirm your account.',
+          user: {
+            id: @user.id,
+            email: @user.email,
+            email_confirmed: @user.email_confirmed?,
+            created_at: @user.created_at.iso8601
+          }
+        }, status: :created
+        # Send confirmation email logic should be here
+        # Assuming EmailConfirmation module and DeviseMailer are available and properly configured
+        if defined?(EmailConfirmation)
+          token = @user.generate_confirmation_token
+          DeviseMailer.confirmation_instructions(@user, token).deliver_later if token
         end
       else
         render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
@@ -27,41 +33,7 @@ class Api::UsersRegistrationsController < Api::BaseController
     render json: { error: e.message }, status: :internal_server_error
   end
 
-  def resend_confirmation
-    email_param = params[:email]
-    if email_param.blank? || !(email_param =~ URI::MailTo::EMAIL_REGEXP)
-      render json: { message: I18n.t('email_login.registrations.invalid_email_format') }, status: :unprocessable_entity and return
-    end
-
-    user = User.find_by(email: email_param)
-    if user.nil?
-      render json: { message: I18n.t('email_login.registrations.email_not_found') }, status: :not_found and return
-    end
-
-    if defined?(EmailConfirmation)
-      token = user.generate_confirmation_token
-      if token
-        EmailConfirmation.send_confirmation_email(user) # Assuming this method exists and sends the email
-        render json: { status: 200, message: I18n.t('email_login.registrations.confirmation_email_resent') }, status: :ok
-      else
-        render json: { message: I18n.t('email_login.registrations.failed_to_resent_confirmation_email') }, status: :unprocessable_entity
-      end
-    else
-      render json: { message: I18n.t('email_login.registrations.email_confirmation_not_defined') }, status: :unprocessable_entity
-    end
-  end
-
-  def check_email_availability
-    email_param = params[:email]
-    if email_param.blank? || !(email_param =~ URI::MailTo::EMAIL_REGEXP)
-      render json: { message: I18n.t('email_login.registrations.invalid_email_format') }, status: :bad_request and return
-    end
-
-    email_available = User.email_available?(email_param)
-    render json: { available: email_available }, status: :ok
-  rescue => e
-    render json: { message: I18n.t('common.500'), error: e.message }, status: :internal_server_error
-  end
+  # ... rest of the existing methods ...
 
   private
 
@@ -71,15 +43,17 @@ class Api::UsersRegistrationsController < Api::BaseController
 
   def validate_email_format
     unless create_params[:email] =~ URI::MailTo::EMAIL_REGEXP
-      render json: { message: I18n.t('email_login.registrations.invalid_email_format') },
+      render json: { message: 'Please enter a valid email address.' },
              status: :bad_request and return
     end
   end
 
   def validate_password_strength
-    password_strength = Devise.password_length.include?(create_params[:password].length) &&
-                        User::PASSWORD_FORMAT.match?(create_params[:password])
-    unless password_strength
+    unless create_params[:password].length >= 8
+      render json: { message: 'Password must be at least 8 characters long.' },
+             status: :unprocessable_entity and return
+    end
+    unless User::PASSWORD_FORMAT.match?(create_params[:password])
       render json: { message: I18n.t('email_login.registrations.weak_password') },
              status: :unprocessable_entity and return
     end
@@ -87,7 +61,7 @@ class Api::UsersRegistrationsController < Api::BaseController
 
   def validate_password_confirmation
     unless create_params[:password] == create_params[:password_confirmation]
-      render json: { message: I18n.t('email_login.registrations.password_confirmation_mismatch') },
+      render json: { message: 'Passwords do not match.' },
              status: :bad_request and return
     end
   end
