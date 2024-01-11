@@ -65,14 +65,6 @@ class User < ApplicationRecord
     raw
   end
 
-  def generate_confirmation_token_and_save
-    raw, enc = Devise.token_generator.generate(self.class, :confirmation_token)
-    self.confirmation_token = enc
-    self.confirmation_sent_at = Time.now.utc
-    save(validate: false)
-    raw
-  end
-
   def confirm_email(confirmation_token)
     return false unless self.confirmation_token == confirmation_token
     token_valid_time = Devise.confirm_within || 2.days
@@ -81,6 +73,26 @@ class User < ApplicationRecord
     self.email_confirmed = true
     self.confirmation_token = nil
     save
+  end
+
+  def valid_confirmation_token?(token)
+    email_confirmation = email_confirmations.find_by(token: token)
+    email_confirmation.present? && !email_confirmation.confirmed && email_confirmation.expires_at > Time.current
+  end
+
+  def confirm_email
+    transaction do
+      update!(email_confirmed: true)
+      email_confirmations.update!(confirmed: true)
+      log_in_user
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    # Handle the error appropriately
+  end
+
+  def log_in_user
+    # Assuming CustomAccessToken is a model that responds to `create_for_user`
+    CustomAccessToken.create_for_user(self)
   end
 
   class << self
