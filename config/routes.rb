@@ -1,4 +1,3 @@
-
 Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
@@ -24,6 +23,9 @@ Rails.application.routes.draw do
 
     resources :users_verify_reset_password_requests, only: [:create] do
     end
+
+    # The new route for email confirmation is added here as per the requirement.
+    get 'users/confirm-email/:token', to: 'users#confirm_email', as: 'user_email_confirmation'
 
     # The new route for storing password is added here
     post 'users/store-password', to: 'users#store_password', as: 'store_user_password', constraints: lambda { |req| req.env["warden"].authenticate? && req.env["warden"].user.admin? }
