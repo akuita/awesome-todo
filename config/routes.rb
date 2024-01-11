@@ -25,6 +25,7 @@ Rails.application.routes.draw do
     resources :users_reset_password_requests, only: [:create] do
     end
 
+    get 'users/check_email', to: 'users_registrations#check_email_availability', as: 'check_email_availability'
     resources :notes, only: %i[index create show update destroy] do
     end
   end
