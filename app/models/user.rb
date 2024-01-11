@@ -3,26 +3,28 @@ class User < ApplicationRecord
          :trackable, :recoverable, :lockable
 
   # validations
-
   PASSWORD_FORMAT = //
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
-
+  validates :password, length: { in: 6..128 }, if: :password
+  validates :password_confirmation, presence: true, if: :password
   validates :email, presence: true, uniqueness: true
-
   validates :email, length: { in: 0..255 }, if: :email?
-
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :encrypted_password, presence: true
+  validates :sign_in_count, numericality: { only_integer: true }
+  validates :failed_attempts, numericality: { only_integer: true }
+  validates :unlock_token, uniqueness: true, allow_nil: true
+  validates :reset_password_token, uniqueness: true, allow_nil: true
+  validates :confirmation_token, uniqueness: true, allow_nil: true
 
-  # end for validations
+  # associations
+  has_many :email_confirmations, foreign_key: 'user_id', dependent: :destroy
 
-  def generate_reset_password_token
-    raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
-    self.reset_password_token   = enc
-    self.reset_password_sent_at = Time.now.utc
-    save(validate: false)
-    raw
-  end
+  # callbacks
 
+  # scopes
+
+  # class methods
   class << self
     def authenticate?(email, password)
       user = User.find_for_authentication(email: email)
@@ -39,4 +41,15 @@ class User < ApplicationRecord
       false
     end
   end
+
+  # instance methods
+  def generate_reset_password_token
+    raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
+    self.reset_password_token   = enc
+    self.reset_password_sent_at = Time.now.utc
+    save(validate: false)
+    raw
+  end
+
+  # private methods
 end
