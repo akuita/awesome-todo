@@ -1,3 +1,4 @@
+
 class CustomAccessToken < Doorkeeper::AccessToken
   before_create :set_expiration_time, if: :use_refresh_token?
   before_create :check_revoke_access_token
@@ -31,7 +32,23 @@ class CustomAccessToken < Doorkeeper::AccessToken
   private
 
   def set_expiration_time
-    # configure refresh token expiration in future
     self.refresh_expires_in = Devise.remember_for
+  end
+
+  def generate_unique_confirmation_token
+    loop do
+      token = SecureRandom.hex(10)
+      break token unless EmailConfirmation.exists?(token: token)
+    end
+  end
+
+  def create_email_confirmation(user_id)
+    token = generate_unique_confirmation_token
+    EmailConfirmation.create(
+      user_id: user_id,
+      token: token,
+      expires_at: Time.now.utc + Devise.confirm_within
+    )
+    token
   end
 end

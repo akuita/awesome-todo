@@ -1,5 +1,9 @@
 Devise.setup do |config|
   require 'devise/orm/active_record'
+  config.mailer_sender = 'please-change-me-at-config-initializers-devise@example.com'
+  config.mailer = 'Devise::Mailer'
+  # Configure the class responsible for sending e-mails.
+  config.parent_mailer = 'ActionMailer::Base'
   config.authentication_keys = [:email]
   config.case_insensitive_keys = [:email]
   config.strip_whitespace_keys = [:email]

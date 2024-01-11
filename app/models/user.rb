@@ -26,6 +26,10 @@ class User < ApplicationRecord
 
   # class methods
   class << self
+    def email_registered?(email)
+      exists?(email: email)
+    end
+
     def email_available?(email)
       !exists?(email: email)
     end
