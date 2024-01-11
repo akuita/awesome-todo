@@ -23,7 +23,27 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def resend_confirmation
-    # ... existing resend_confirmation code ...
+    email_param = params[:email]
+    if email_param.blank? || !(email_param =~ URI::MailTo::EMAIL_REGEXP)
+      render json: { message: I18n.t('email_login.registrations.invalid_email_format') }, status: :unprocessable_entity and return
+    end
+
+    user = User.find_by(email: email_param)
+    if user.nil?
+      render json: { message: I18n.t('email_login.registrations.email_not_found') }, status: :not_found and return
+    end
+
+    if defined?(EmailConfirmation)
+      token = user.generate_confirmation_token
+      if token
+        EmailConfirmation.send_confirmation_email(user) # Assuming this method exists and sends the email
+        render json: { status: 200, message: I18n.t('email_login.registrations.confirmation_email_resent') }, status: :ok
+      else
+        render json: { message: I18n.t('email_login.registrations.failed_to_resent_confirmation_email') }, status: :unprocessable_entity
+      end
+    else
+      render json: { message: I18n.t('email_login.registrations.email_confirmation_not_defined') }, status: :unprocessable_entity
+    end
   end
 
   def check_email_availability

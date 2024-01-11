@@ -11,6 +11,7 @@ Rails.application.routes.draw do
   namespace :api do
     resources :users_verify_confirmation_token, only: [:create] do
     end
+    post 'users/resend-confirmation', to: 'users_verify_confirmation_token#resend_confirmation'
     post 'users/confirmation', to: 'users_verify_confirmation_token#create'
 
     get 'users_passwords/documentation', to: 'users_passwords#documentation'
