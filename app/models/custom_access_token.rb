@@ -29,9 +29,9 @@ class CustomAccessToken < Doorkeeper::AccessToken
   end
 
   private
-
+  
   def set_expiration_time
-    # configure refresh token expiration in future
-    self.refresh_expires_in = Devise.remember_for
+    # Set refresh token expiration time based on Devise configuration
+    self.refresh_expires_in = Devise.config.remember_for
   end
 end

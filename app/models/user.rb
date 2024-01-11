@@ -1,5 +1,6 @@
 class User < ApplicationRecord
-  devise :database_authenticatable, :registerable, :recoverable, :rememberable, :trackable, :lockable, :validatable,
+  devise :database_authenticatable, :registerable, :recoverable, :rememberable, :trackable, :lockable,
+         :confirmable,
          :validatable
 
   # validations
@@ -13,6 +14,7 @@ class User < ApplicationRecord
   validates :email, length: { in: 0..255 }, if: :email?
 
   validates_confirmation_of :password, if: -> { password.present? }
+  validates :email_confirmed, inclusion: { in: [true, false] }, on: :create
   validates :encrypted_password, presence: true
 
   validates :sign_in_count, numericality: { only_integer: true }
@@ -21,6 +23,7 @@ class User < ApplicationRecord
   validates :reset_password_token, uniqueness: true, allow_nil: true
   validates :confirmation_token, uniqueness: true, allow_nil: true
 
+  before_create :set_email_confirmed_false
   # end for validations
 
   # associations
@@ -34,6 +37,14 @@ class User < ApplicationRecord
     self.reset_password_sent_at = Time.now.utc
     save(validate: false)
     raw
+  end
+
+  def set_email_confirmed_false
+    self.email_confirmed = false
+  end
+
+  def can_resend_confirmation?
+    confirmation_sent_at.nil? || (Time.now.utc - confirmation_sent_at) > 2.minutes
   end
 
   def regenerate_confirmation_token
@@ -54,6 +65,7 @@ class User < ApplicationRecord
     return false if self.confirmation_sent_at < token_valid_time.ago
 
     self.email_confirmed = true
+    self.confirmation_token = nil
     save
   end
 

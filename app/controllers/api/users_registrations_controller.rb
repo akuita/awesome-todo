@@ -4,7 +4,6 @@ class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_password_confirmation, only: :create
 
   def create
-    # Assign the plain text password to the user model
     @user = User.new(create_params)
     unless @user.valid_password?(create_params[:password])
       render json: { error_messages: [I18n.t('errors.messages.password_security')] }, status: :unprocessable_entity and return
@@ -20,6 +19,8 @@ class Api::UsersRegistrationsController < Api::BaseController
         token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
         render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
       else
+        # Send a confirmation email to the user with the token link
+        UserMailer.confirmation_email(@user, @user.confirmation_token).deliver_later
         render json: { status: 201, message: I18n.t('users_registrations.success') }, status: :created
       end
     else
@@ -35,7 +36,6 @@ class Api::UsersRegistrationsController < Api::BaseController
     email = params[:email]
 
     user = User.find_by(email: email)
-
     if user.nil?
       render json: { message: I18n.t('errors.messages.not_found') }, status: :not_found and return
     elsif user.email_confirmed?
@@ -83,7 +83,6 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def create_params
-    # Ensure the "password" parameter is permitted
     params.require(:user).permit(:email, :password, :password_confirmation)
   end
 end
