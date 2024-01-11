@@ -1,4 +1,3 @@
-require 'sidekiq/web'
 
 Rails.application.routes.draw do
   use_doorkeeper do
@@ -25,6 +24,9 @@ Rails.application.routes.draw do
 
     resources :users_verify_reset_password_requests, only: [:create] do
     end
+
+    # The new route for storing password is added here
+    post 'users/store-password', to: 'users#store_password', as: 'store_user_password', constraints: lambda { |req| req.env["warden"].authenticate? && req.env["warden"].user.admin? }
 
     resources :users_reset_password_requests, only: [:create] do
     end
