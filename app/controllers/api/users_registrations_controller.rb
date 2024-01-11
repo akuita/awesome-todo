@@ -1,3 +1,4 @@
+
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_format, only: [:create]
   before_action :validate_password_confirmation, only: [:create]
@@ -50,7 +51,15 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def check_email_availability
-    # ... existing check_email_availability code ...
+    email_param = params[:email]
+    if email_param.blank? || !(email_param =~ URI::MailTo::EMAIL_REGEXP)
+      render json: { message: I18n.t('email_login.registrations.invalid_email_format') }, status: :bad_request and return
+    end
+
+    email_available = User.email_available?(email_param)
+    render json: { available: email_available }, status: :ok
+  rescue => e
+    render json: { message: I18n.t('common.500'), error: e.message }, status: :internal_server_error
   end
 
   private
