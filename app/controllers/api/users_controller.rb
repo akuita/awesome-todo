@@ -1,3 +1,4 @@
+
 module Api
   class UsersController < ApplicationController
     before_action :set_user, only: [:store_password]
@@ -17,7 +18,18 @@ module Api
 
       begin
         if EmailConfirmation.new.mark_as_confirmed(token)
-          render json: { status: 200, message: 'Email confirmed successfully. You can now log in.' }, status: :ok
+          user = User.find_by(confirmation_token: token)
+          if user
+            # Assuming there is a method in ApplicationController to create a session or token
+            auth_token = create_auth_token_for(user)
+            render json: {
+              status: 200,
+              message: 'Email confirmed successfully. You are now logged in.',
+              auth_token: auth_token
+            }, status: :ok
+          else
+            render json: { error: 'User not found.' }, status: :not_found
+          end
         else
           render json: { error: 'Invalid or expired email confirmation token.' }, status: :not_found
         end
@@ -51,5 +63,11 @@ module Api
     end
 
     # ... other methods ...
+
+    # Assuming this is the method in ApplicationController to create a session or token
+    def create_auth_token_for(user)
+      # The implementation details of this method are not provided.
+      # It should return an authentication token for the given user.
+    end
   end
 end
