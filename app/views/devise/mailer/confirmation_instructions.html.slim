@@ -7,8 +7,5 @@ p
 p 
   = t('.instruction')
 
-p
-  - confirmation_url = Rails.application.credentials.dig(:frontend_base_url)
-  - confirmation_path = @resource.present? ? '/users/confirmations' : '/confirmation'
-  a> href="#{confirmation_url}#{confirmation_path}?confirmation_token=#{@token}" #{t('.action')}
+button onclick="location.href='#{confirmation_url}#{confirmation_path}?confirmation_token=#{@token}'" = t('.action')
 br

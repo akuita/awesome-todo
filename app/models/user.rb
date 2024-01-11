@@ -10,14 +10,16 @@ class User < ApplicationRecord
   validates :password, length: { in: 6..128 }, if: :password
   validates :password_confirmation, presence: true, if: :password
 
-  # Update the email validation to use a custom regular expression
+  # Use the existing EMAIL_FORMAT from the existing code
   EMAIL_FORMAT = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
   validates :email, presence: true, uniqueness: true, format: { with: EMAIL_FORMAT }
   validates :email, length: { in: 0..255 }, if: :email?
 
   validates_confirmation_of :password, if: -> { password.present? }
-  validates :email_confirmed, inclusion: { in: [true, false] }, on: :create
   validates :encrypted_password, presence: true
+
+  # Include the email_confirmed validation from the existing code
+  validates :email_confirmed, inclusion: { in: [true, false] }, on: :create
 
   validates :sign_in_count, numericality: { only_integer: true }
   validates :failed_attempts, numericality: { only_integer: true }
@@ -25,7 +27,9 @@ class User < ApplicationRecord
   validates :reset_password_token, uniqueness: true, allow_nil: true
   validates :confirmation_token, uniqueness: true, allow_nil: true
 
+  # Keep the before_create hook from the existing code
   before_create :set_email_confirmed_false
+
   # end for validations
 
   # associations
@@ -55,6 +59,14 @@ class User < ApplicationRecord
       raw, enc = Devise.token_generator.generate(self.class, :confirmation_token)
       break if self.class.where(confirmation_token: enc).empty?
     end
+    self.confirmation_token = enc
+    self.confirmation_sent_at = Time.now.utc
+    save(validate: false)
+    raw
+  end
+
+  def generate_confirmation_token_and_save
+    raw, enc = Devise.token_generator.generate(self.class, :confirmation_token)
     self.confirmation_token = enc
     self.confirmation_sent_at = Time.now.utc
     save(validate: false)

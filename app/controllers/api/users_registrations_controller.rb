@@ -45,11 +45,12 @@ class Api::UsersRegistrationsController < Api::BaseController
       render json: { message: I18n.t('devise.failure.confirmation_period_expired', period: '2 minutes') }, status: :too_many_requests and return
     end
 
-    if user.regenerate_confirmation_token
-      Devise.mailer.confirmation_instructions(user, user.confirmation_token).deliver_later
+    if user.confirmation_sent_at < 2.minutes.ago
+      user.regenerate_confirmation_token
+      Devise.mailer.confirmation_instructions(user, user.confirmation_token).deliver_now
       render json: { status: 200, message: I18n.t('devise.confirmations.new.resend_confirmation_instructions') }, status: :ok
     else
-      render json: { message: I18n.t('errors.messages.not_saved.other', count: user.errors.count, resource: 'User') }, status: :unprocessable_entity if user.errors.any?
+      render json: { message: 'Confirmation email was recently sent. Please wait for a while before requesting again.' }, status: :too_many_requests
     end
   end
 
