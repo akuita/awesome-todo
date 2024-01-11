@@ -50,32 +50,31 @@ module Api
       render json: { error: e.message }, status: :internal_server_error
     end
 
-    private
-    
     def resend_confirmation
       email = params[:email]
-      user = User.find_by_email_and_unconfirmed(email)
+      user = User.find_by_email(email)
 
       if user.nil?
-        render json: { error: 'Email not registered or already confirmed.' }, status: :not_found
+        render json: { error: 'Email address not found.' }, status: :not_found
         return
       end
 
-      token = user.email_confirmations.find_or_create_token
+      token = EmailConfirmation.find_or_create_token(user)
 
-      if token.persisted?
-        DeviseMailer.send_confirmation_email(user, token.token).deliver_now
-        render json: { status: 200, message: 'Confirmation email has been resent.' }, status: :ok
-      else
-        render json: { error: 'Failed to generate confirmation token.' }, status: :internal_server_error
+      if token.created_at > 2.minutes.ago
+        render json: { error: 'You can request to resend the confirmation link every 2 minutes.' }, status: :too_many_requests
+        return
       end
-    rescue StandardError => e
-      render json: { error: e.message }, status: :internal_server_error
+
+      DeviseMailer.send_confirmation_email(user, token.token).deliver_now
+      render json: { status: 200, message: 'Confirmation email resent successfully. Please check your inbox.' }, status: :ok
     end
 
+    private
+    
     def validate_email_format
       unless params[:email].match?(URI::MailTo::EMAIL_REGEXP)
-        render json: { error: 'Invalid email format.' }, status: :bad_request
+        render json: { error: 'Please enter a valid email address.' }, status: :bad_request
       end
     end
 

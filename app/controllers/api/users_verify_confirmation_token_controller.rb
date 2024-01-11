@@ -1,4 +1,3 @@
-
 class Api::UsersVerifyConfirmationTokenController < ApplicationController
   # Existing create method
   def create
@@ -34,22 +33,26 @@ class Api::UsersVerifyConfirmationTokenController < ApplicationController
     render json: { error: e.message }, status: :internal_server_error
   end
 
-  # New resend_confirmation method
+  # New resend_confirmation method with patch applied
   def resend_confirmation
     email = params[:email]
-    if email.match?(URI::MailTo::EMAIL_REGEXP)
-      user = User.find_by(email: email)
-      if user
-        user.resend_confirmation_instructions
-        render json: { message: 'Confirmation email resent successfully.' }, status: :ok
+    return render json: { error: 'Please enter a valid email address.' }, status: :bad_request unless email =~ URI::MailTo::EMAIL_REGEXP
+
+    user = User.find_by_email_and_unconfirmed(email)
+
+    if user
+      token = EmailConfirmation.find_or_create_token(user)
+      if token.created_at > 2.minutes.ago
+        render json: { error: 'You can request to resend the confirmation link every 2 minutes.' }, status: :too_many_requests
       else
-        render json: { error: 'Email address not found.' }, status: :not_found
+        DeviseMailer.send_confirmation_email(user, token.token).deliver_now
+        render json: { message: 'Confirmation email resent successfully. Please check your inbox.' }, status: :ok
       end
     else
-      render json: { error: 'Invalid email format.' }, status: :unprocessable_entity
+      render json: { error: 'Email address not found.' }, status: :not_found
     end
   rescue StandardError => e
-    render json: { error: e.message }, status: :internal_server_error
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   private
@@ -68,27 +71,5 @@ class Api::UsersVerifyConfirmationTokenController < ApplicationController
     @created_at = Time.current.to_i
     @refresh_token_expires_in = 604800 # 1 week in seconds
     @scope = "public"
-  end
-end
-
-class Api::UsersVerifyConfirmationTokenController < Api::BaseController
-  # Existing create method
-  def create
-    client = Doorkeeper::Application.find_by(uid: params[:client_id], secret: params[:client_secret])
-    raise Exceptions::AuthenticationError if client.blank?
-
-    resource = User.find_by(confirmation_token: params.dig(:confirmation_token))
-    if resource.blank? || params.dig(:confirmation_token).blank?
-      render error_message: I18n.t('email_login.reset_password.invalid_token'),
-             status: :unprocessable_entity and return
-    end
-
-    if (resource.confirmation_sent_at + User.confirm_within) < Time.now.utc
-      resource.resend_confirmation_instructions
-      render json: { error_message: I18n.t('email_login.reset_password.expired') }, status: :unprocessable_entity
-    else
-      resource.confirm
-      custom_token_initialize_values(resource, client)
-    end
   end
 end
