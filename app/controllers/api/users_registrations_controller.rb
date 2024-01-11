@@ -1,6 +1,6 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_uniqueness, only: :create
-  before_action :validate_email_format, only: [:create, :resend_confirmation]
+  before_action :validate_email_format, only: [:create, :resend_confirmation, :check_email_availability]
   before_action :validate_password_confirmation, only: :create
 
   def create
@@ -37,6 +37,7 @@ class Api::UsersRegistrationsController < Api::BaseController
     email = params[:email]
 
     user = User.find_by(email: email)
+
     if user.nil?
       render json: { message: I18n.t('errors.messages.not_found') }, status: :not_found and return
     elsif user.email_confirmed?
@@ -45,13 +46,17 @@ class Api::UsersRegistrationsController < Api::BaseController
       render json: { message: I18n.t('devise.failure.confirmation_period_expired', period: '2 minutes') }, status: :too_many_requests and return
     end
 
-    if user.confirmation_sent_at < 2.minutes.ago
-      user.regenerate_confirmation_token
-      Devise.mailer.confirmation_instructions(user, user.confirmation_token).deliver_now
+    if user.regenerate_confirmation_token
+      Devise.mailer.confirmation_instructions(user, user.confirmation_token).deliver_later
       render json: { status: 200, message: I18n.t('devise.confirmations.new.resend_confirmation_instructions') }, status: :ok
     else
-      render json: { message: 'Confirmation email was recently sent. Please wait for a while before requesting again.' }, status: :too_many_requests
+      render json: { message: I18n.t('errors.messages.not_saved.other', count: user.errors.count, resource: 'User') }, status: :unprocessable_entity if user.errors.any?
     end
+  end
+
+  def check_email_availability
+    email_available = User.email_available?(params[:email])
+    render json: { email_available: email_available }, status: :ok
   end
 
   private
@@ -64,7 +69,7 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def validate_email_format
-    email = action_name == 'resend_confirmation' ? params[:email] : create_params[:email]
+    email = action_name == 'resend_confirmation' || action_name == 'check_email_availability' ? params[:email] : create_params[:email]
     unless email =~ URI::MailTo::EMAIL_REGEXP
       render json: { error_messages: [I18n.t('errors.messages.invalid_email')] }, status: :unprocessable_entity
       return

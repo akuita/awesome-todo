@@ -1,4 +1,3 @@
-
 require 'sidekiq/web'
 
 Rails.application.routes.draw do
@@ -23,8 +22,6 @@ Rails.application.routes.draw do
     resources :users_passwords, only: [:create] do
     end
 
-    post '/users/:user_id/password_management_tools/:tool_id/integrate', to: 'users_registrations#integrate_password_management_tool'
-
     resources :users_verify_reset_password_requests, only: [:create] do
     end
 
@@ -34,6 +31,11 @@ Rails.application.routes.draw do
     end
 
     get '/users/confirm-email/:confirmation_token', to: 'users_confirmations#confirm_email'
+
+    post '/users/:user_id/password_management_tools/:tool_id/integrate', to: 'users_registrations#integrate_password_management_tool'
+
+    # Added the route for checking email availability from the new code
+    get 'users/check_email_availability', to: 'users_registrations#check_email_availability'
 
     resources :notes, only: %i[index create show update destroy] do
     end

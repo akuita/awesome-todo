@@ -103,6 +103,10 @@ class User < ApplicationRecord
       exists?(user_id)
     end
 
+    def email_available?(email)
+      !User.exists?(email: email)
+    end
+
     # Add class methods here, if any.
   end
 
