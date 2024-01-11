@@ -3,7 +3,7 @@ class User < ApplicationRecord
          :trackable, :recoverable, :lockable
 
   # validations
-  PASSWORD_FORMAT = //
+  PASSWORD_FORMAT = /\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]])/
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
   validates :password, length: { in: 6..128 }, if: :password
   validates :password_confirmation, presence: true, if: :password

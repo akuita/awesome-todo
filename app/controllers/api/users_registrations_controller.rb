@@ -15,7 +15,6 @@ class Api::UsersRegistrationsController < Api::BaseController
         head :ok, message: I18n.t('common.200') and return
       end
     else
-      # Handle the case where email is already registered
       error_messages = @user.errors.messages
       render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
              status: :unprocessable_entity
@@ -57,7 +56,6 @@ class Api::UsersRegistrationsController < Api::BaseController
   private
 
   def create_params
-    # Strong parameters for user creation
     params.require(:user).permit(:password, :password_confirmation, :email)
   end
 
