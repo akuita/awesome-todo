@@ -4,6 +4,7 @@ class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_password_confirmation, only: :create
 
   def create
+    # Assign the plain text password to the user model
     @user = User.new(create_params)
     unless @user.valid_password?(create_params[:password])
       render json: { error_messages: [I18n.t('errors.messages.password_security')] }, status: :unprocessable_entity and return
@@ -82,6 +83,7 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def create_params
+    # Ensure the "password" parameter is permitted
     params.require(:user).permit(:email, :password, :password_confirmation)
   end
 end
