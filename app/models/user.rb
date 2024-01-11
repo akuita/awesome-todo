@@ -38,7 +38,7 @@ class User < ApplicationRecord
       raw, enc = Devise.token_generator.generate(self, :confirmation_token)
       { raw: raw, enc: enc }
     end
-    
+
     def authenticate?(email, password)
       user = User.find_for_authentication(email: email)
       return false if user.blank?
@@ -79,17 +79,30 @@ class User < ApplicationRecord
   end
 
   def generate_confirmation_token
-    token_pair = self.class.generate_unique_confirmation_token
-    email_confirmations.create(token: token_pair[:enc], expires_at: 15.minutes.from_now)
-    send_confirmation_email(token_pair[:raw])
+    last_confirmation = email_confirmations.order(created_at: :desc).first
+    if last_confirmation.nil? || last_confirmation.created_at < 2.minutes.ago
+      token_pair = self.class.generate_unique_confirmation_token
+      email_confirmations.create(token: token_pair[:enc], expires_at: 15.minutes.from_now)
+      send_confirmation_email(token_pair[:raw])
+    end
   end
 
   # Methods for password management tool integration
   def password_complexity_compatible?(password_management_tool)
-    # This is a placeholder method. You should implement checks based on the specific requirements
-    # of the password management tool you are integrating with.
-    # For example, check if the password meets the complexity requirements:
-    password_management_tool.complexity_requirements_met?(self.password)
+    complexity_requirements = {
+      min_length: 8,
+      contains_digit: true,
+      contains_uppercase: true,
+      contains_lowercase: true,
+      contains_special: true
+    }
+
+    password.to_s.match?(PASSWORD_FORMAT) &&
+      complexity_requirements[:min_length] <= password.length &&
+      complexity_requirements[:contains_digit] && password.count("0-9") > 0 &&
+      complexity_requirements[:contains_uppercase] && password.count("A-Z") > 0 &&
+      complexity_requirements[:contains_lowercase] && password.count("a-z") > 0 &&
+      complexity_requirements[:contains_special] && password.count("^a-zA-Z0-9") > 0
   end
 
   def autofill_hints_compatible?(password_management_tool)

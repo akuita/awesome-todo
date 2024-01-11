@@ -1,6 +1,15 @@
 
 class Api::UsersPasswordsController < Api::BaseController
   before_action :validate_password_params, only: [:create]
+  
+  # New methods for password management tool integration
+  def check_password_complexity
+    render json: { complexity_compatible: current_resource_owner.password_complexity_compatible? }, status: :ok
+  end
+
+  def check_autofill_hints
+    render json: { autofill_hints_compatible: current_resource_owner.autofill_hints_compatible? }, status: :ok
+  end
 
   def create
     # Ensure compatibility with password management tools by supporting
@@ -23,6 +32,9 @@ class Api::UsersPasswordsController < Api::BaseController
   end
 
   private
+
+  # Placeholder methods for User model integration
+  # These methods will be implemented in the User model
 
   def validate_password_params
     # Validate password parameters to ensure they meet the complexity requirements

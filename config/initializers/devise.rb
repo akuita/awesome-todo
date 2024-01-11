@@ -1,3 +1,4 @@
+
 Devise.setup do |config|
   require 'devise/orm/active_record'
   config.mailer_sender = 'please-change-me-at-config-initializers-devise@example.com'
@@ -12,7 +13,8 @@ Devise.setup do |config|
   config.reconfirmable = true
   config.expire_all_remember_me_on_sign_out = true
   config.remember_for = 24.hours
-  config.password_length = 6..128
+  config.password_length = 8..128
+  config.password_regex = User::PASSWORD_FORMAT
   config.reset_password_within = 1.hour
   config.maximum_attempts = 10
   config.unlock_strategy = :time
