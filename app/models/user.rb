@@ -5,7 +5,7 @@ class User < ApplicationRecord
   # validations
   PASSWORD_FORMAT = /\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]])/
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
-  validates :password, length: { in: 6..128 }, if: :password
+  validates :password, length: { minimum: 8 }, if: :password
   validates :password_confirmation, presence: true, if: :password
   validates :email, presence: true, uniqueness: true
   validates :email, length: { in: 0..255 }, if: :email?

@@ -1,4 +1,5 @@
 class Api::UsersRegistrationsController < Api::BaseController
+  before_action :validate_email_format, only: [:create]
   before_action :validate_password_confirmation, only: [:create]
   before_action :validate_password_strength, only: [:create]
 
@@ -13,13 +14,15 @@ class Api::UsersRegistrationsController < Api::BaseController
       else
         # Send confirmation email
         EmailConfirmation.send_confirmation_email(@user) if defined?(EmailConfirmation)
-        head :ok, message: I18n.t('common.200') and return
+        render json: { status: 201, message: I18n.t('common.user_registered') }, status: :created and return
       end
     else
       error_messages = @user.errors.messages
       render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
              status: :unprocessable_entity
     end
+  rescue => e
+    render json: { message: I18n.t('common.500'), error: e.message }, status: :internal_server_error
   end
 
   def resend_confirmation
@@ -56,6 +59,13 @@ class Api::UsersRegistrationsController < Api::BaseController
     params.require(:user).permit(:password, :password_confirmation, :email)
   end
 
+  def validate_email_format
+    unless create_params[:email] =~ URI::MailTo::EMAIL_REGEXP
+      render json: { message: I18n.t('email_login.registrations.invalid_email_format') },
+             status: :bad_request and return
+    end
+  end
+
   def validate_password_strength
     password_strength = Devise.password_length.include?(create_params[:password].length) &&
                         User::PASSWORD_FORMAT.match?(create_params[:password])
@@ -66,13 +76,13 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def validate_password_confirmation
-    unless params[:user][:password] == params[:user][:password_confirmation]
+    unless create_params[:password] == create_params[:password_confirmation]
       render json: { message: I18n.t('email_login.registrations.password_confirmation_mismatch') },
-             status: :unprocessable_entity and return
+             status: :bad_request and return
     end
-    if User.email_registered?(params[:user][:email])
+    if User.email_registered?(create_params[:email])
       render json: { message: I18n.t('email_login.registrations.email_already_registered') },
-             status: :unprocessable_entity and return
+             status: :conflict and return
     end
   end
 end
