@@ -1,7 +1,6 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable, :confirmable
-  # Devise already handles password hashing with bcrypt
 
   # validations
   PASSWORD_FORMAT = /\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]])/
@@ -35,6 +34,11 @@ class User < ApplicationRecord
       !exists?(email: email)
     end
 
+    def generate_unique_confirmation_token
+      raw, enc = Devise.token_generator.generate(self, :confirmation_token)
+      { raw: raw, enc: enc }
+    end
+    
     def authenticate?(email, password)
       user = User.find_for_authentication(email: email)
       return false if user.blank?
@@ -75,12 +79,9 @@ class User < ApplicationRecord
   end
 
   def generate_confirmation_token
-    last_confirmation = email_confirmations.order(created_at: :desc).first
-    if last_confirmation.nil? || last_confirmation.created_at < 2.minutes.ago
-      raw, enc = Devise.token_generator.generate(EmailConfirmation, :token)
-      email_confirmations.create(token: enc, expires_at: 15.minutes.from_now)
-      send_confirmation_email(raw)
-    end
+    token_pair = self.class.generate_unique_confirmation_token
+    email_confirmations.create(token: token_pair[:enc], expires_at: 15.minutes.from_now)
+    send_confirmation_email(token_pair[:raw])
   end
 
   # Methods for password management tool integration

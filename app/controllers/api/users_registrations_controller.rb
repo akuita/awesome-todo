@@ -4,26 +4,27 @@ class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_password_strength, only: [:create]
 
   def create
-    @user = User.new(create_params.except(:password, :password_confirmation))
-    @user.password = create_params[:password]
-    if @user.save
-      if Rails.env.staging?
-        # to show token in staging
-        token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
-        EmailConfirmation.create_confirmation_token(@user) if defined?(EmailConfirmation)
-        render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
-      else
-        # Send confirmation email
-        EmailConfirmation.send_confirmation_email(@user) if defined?(EmailConfirmation)
-        render json: { status: 201, message: I18n.t('common.user_registered') }, status: :created and return
-      end
+    if User.email_registered?(create_params[:email])
+      render json: { error: 'Email already registered' }, status: :unprocessable_entity
     else
-      error_messages = @user.errors.messages
-      render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
-             status: :unprocessable_entity
+      @user = User.new(create_params)
+      if @user.save
+        if Rails.env.staging?
+          # to show token in staging
+          token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
+          EmailConfirmation.create_confirmation_token(@user) if defined?(EmailConfirmation)
+          render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
+        else
+          # Send confirmation email
+          EmailConfirmation.send_confirmation_email(@user) if defined?(EmailConfirmation)
+          render json: { status: 201, message: I18n.t('common.user_registered') }, status: :created and return
+        end
+      else
+        render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
+      end
     end
-  rescue => e
-    render json: { message: I18n.t('common.500'), error: e.message }, status: :internal_server_error
+  rescue StandardError => e
+    render json: { error: e.message }, status: :internal_server_error
   end
 
   def resend_confirmation
@@ -88,10 +89,6 @@ class Api::UsersRegistrationsController < Api::BaseController
     unless create_params[:password] == create_params[:password_confirmation]
       render json: { message: I18n.t('email_login.registrations.password_confirmation_mismatch') },
              status: :bad_request and return
-    end
-    if User.email_registered?(create_params[:email])
-      render json: { message: I18n.t('email_login.registrations.email_already_registered') },
-             status: :conflict and return
     end
   end
 end
