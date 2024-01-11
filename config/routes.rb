@@ -1,4 +1,3 @@
-
 Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
@@ -13,6 +12,7 @@ Rails.application.routes.draw do
     resources :users_verify_confirmation_token, only: [:create] do
     end
 
+    # Updated the route for user registration to match the requirement
     post '/users/register', to: 'users_registrations#create'
 
     resources :users_registrations, only: [:create] do
@@ -29,11 +29,12 @@ Rails.application.routes.draw do
     resources :users_reset_password_requests, only: [:create] do
     end
 
-    # Updated the route for email confirmation to match the requirement
+    # Merged the route for email confirmation with the alias from the existing code
     get '/users/confirm-email/:confirmation_token', to: 'users_confirmations#confirm_email', as: 'confirm_email'
 
     post '/users/:user_id/password_management_tools/:tool_id/integrate', to: 'users_registrations#integrate_password_management_tool'
 
+    # Retained the route for checking email availability from the new code
     get 'users/check_email_availability', to: 'users_registrations#check_email_availability'
 
     resources :notes, only: %i[index create show update destroy] do
