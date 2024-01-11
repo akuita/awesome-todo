@@ -1,11 +1,11 @@
-
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_format, only: [:create]
   before_action :validate_password_confirmation, only: [:create]
   before_action :validate_password_strength, only: [:create]
 
   def create
-    @user = User.new(create_params)
+    @user = User.new(create_params.except(:password, :password_confirmation))
+    @user.password = create_params[:password]
     if @user.save
       if Rails.env.staging?
         # to show token in staging

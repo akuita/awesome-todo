@@ -1,7 +1,7 @@
-
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable, :confirmable
+  # Devise already handles password hashing with bcrypt
 
   # validations
   PASSWORD_FORMAT = /\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]])/
@@ -60,6 +60,12 @@ class User < ApplicationRecord
   end
 
   # instance methods
+  # Override Devise's password= method to ensure password confirmation is handled
+  def password=(new_password)
+    super(new_password)
+    self.password_confirmation = new_password
+  end
+
   def generate_reset_password_token
     raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
     self.reset_password_token   = enc
