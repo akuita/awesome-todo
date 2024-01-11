@@ -1,3 +1,4 @@
+
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable, :confirmable
@@ -47,6 +48,14 @@ class User < ApplicationRecord
       return user if user&.access_locked?
 
       false
+    end
+
+    def find_by_email_and_unconfirmed(email)
+      user = find_by(email: email, email_confirmed: false)
+      unless user
+        raise ActiveRecord::RecordNotFound, "No unconfirmed user found with email: #{email}"
+      end
+      user
     end
   end
 

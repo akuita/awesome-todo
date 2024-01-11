@@ -8,6 +8,7 @@ Rails.application.routes.draw do
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
   
+  post 'users/resend-confirmation', to: 'users#resend_confirmation'
   namespace :api do
     resources :users_verify_confirmation_token, only: [:create] do
     end

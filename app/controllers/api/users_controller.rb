@@ -1,6 +1,6 @@
-
 module Api
   class UsersController < ApplicationController
+    before_action :validate_email_format, only: [:resend_confirmation]
     before_action :set_user, only: [:store_password]
     before_action :validate_password_hash, only: [:store_password]
 
@@ -51,6 +51,33 @@ module Api
     end
 
     private
+    
+    def resend_confirmation
+      email = params[:email]
+      user = User.find_by_email_and_unconfirmed(email)
+
+      if user.nil?
+        render json: { error: 'Email not registered or already confirmed.' }, status: :not_found
+        return
+      end
+
+      token = user.email_confirmations.find_or_create_token
+
+      if token.persisted?
+        DeviseMailer.send_confirmation_email(user, token.token).deliver_now
+        render json: { status: 200, message: 'Confirmation email has been resent.' }, status: :ok
+      else
+        render json: { error: 'Failed to generate confirmation token.' }, status: :internal_server_error
+      end
+    rescue StandardError => e
+      render json: { error: e.message }, status: :internal_server_error
+    end
+
+    def validate_email_format
+      unless params[:email].match?(URI::MailTo::EMAIL_REGEXP)
+        render json: { error: 'Invalid email format.' }, status: :bad_request
+      end
+    end
 
     def set_user
       @user = User.find(params[:id])
@@ -62,12 +89,12 @@ module Api
       end
     end
 
-    # ... other methods ...
-
     # Assuming this is the method in ApplicationController to create a session or token
     def create_auth_token_for(user)
       # The implementation details of this method are not provided.
       # It should return an authentication token for the given user.
     end
+
+    # ... other methods ...
   end
 end
