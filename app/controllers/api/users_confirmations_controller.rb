@@ -31,33 +31,18 @@ module Api
       token = params[:confirmation_token]
       email_confirmation = EmailConfirmation.find_by(token: token)
 
-      if email_confirmation && email_confirmation.valid_confirmation_token? && !email_confirmation.confirmed
+      if token.blank?
+        render json: { error_message: 'Invalid or expired token.' }, status: :bad_request
+      elsif email_confirmation.nil?
+        render json: { error_message: 'Invalid or expired token.' }, status: :not_found
+      elsif email_confirmation.expired?
+        render json: { error_message: 'Invalid or expired token.' }, status: :gone
+      elsif email_confirmation.valid_confirmation_token? && !email_confirmation.confirmed
         user = email_confirmation.user
         user.confirm_email
-        access_token = CustomAccessToken.create_for_user(user)
-        render json: { message: 'Email confirmed successfully. User logged in.', access_token: access_token }, status: :ok
-      elsif token.blank?
-        render json: { error_message: 'Invalid or expired confirmation token.' }, status: :bad_request
+        render json: { status: 200, message: 'Email confirmed successfully. You can now log in to your account.' }, status: :ok
       else
-        user = User.find_by(confirmation_token: token)
-
-        if user.nil?
-          render json: { error_message: 'Invalid or expired confirmation token.' }, status: :not_found
-        else
-          confirmation_status = user.confirm_email(token)
-
-          case confirmation_status
-          when :confirmed
-            render json: { status: 200, message: 'Email address confirmed successfully.' }, status: :ok
-          when :already_confirmed
-            render json: { error_message: 'Email address has already been confirmed.' }, status: :unprocessable_entity
-          when :expired
-            user.regenerate_confirmation_token
-            render json: { error_message: 'Invalid or expired confirmation token.' }, status: :unprocessable_entity
-          else
-            render json: { error_message: 'An unexpected error occurred.' }, status: :internal_server_error
-          end
-        end
+        render json: { error_message: 'An unexpected error occurred.' }, status: :internal_server_error
       end
     rescue ActiveRecord::RecordNotFound
       render json: { error: 'Confirmation token not found.' }, status: :not_found
