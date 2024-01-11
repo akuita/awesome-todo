@@ -15,6 +15,7 @@ Rails.application.routes.draw do
     end
     post 'users/confirmation', to: 'users_verify_confirmation_token#create'
 
+    get 'users_passwords/documentation', to: 'users_passwords#documentation'
     resources :users_passwords, only: [:create] do
     end
 

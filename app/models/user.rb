@@ -1,6 +1,6 @@
 class User < ApplicationRecord
-  devise :database_authenticatable, :registerable, :rememberable, :validatable, :confirmable,
-         :trackable, :recoverable, :lockable
+  devise :database_authenticatable, :registerable, :rememberable, :validatable,
+         :trackable, :recoverable, :lockable, :confirmable
 
   # validations
   PASSWORD_FORMAT = /\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]])/
@@ -66,6 +66,21 @@ class User < ApplicationRecord
       email_confirmations.create(token: enc, expires_at: 15.minutes.from_now)
       send_confirmation_email(raw)
     end
+  end
+
+  # Methods for password management tool integration
+  def password_complexity_compatible?(password_management_tool)
+    # This is a placeholder method. You should implement checks based on the specific requirements
+    # of the password management tool you are integrating with.
+    # For example, check if the password meets the complexity requirements:
+    password_management_tool.complexity_requirements_met?(self.password)
+  end
+
+  def autofill_hints_compatible?(password_management_tool)
+    # This is a placeholder method. You should implement checks based on the specific requirements
+    # of the password management tool you are integrating with.
+    # For example, check if the autofill hints are supported:
+    password_management_tool.autofill_hints_supported?
   end
 
   private

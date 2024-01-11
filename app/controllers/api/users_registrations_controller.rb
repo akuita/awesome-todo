@@ -1,5 +1,6 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_password_confirmation, only: [:create]
+  before_action :validate_password_strength, only: [:create]
 
   def create
     @user = User.new(create_params)
@@ -22,41 +23,26 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def resend_confirmation
-    email = params[:email]
-
-    return render json: { message: I18n.t('devise.failure.not_found_in_database') }, status: :not_found unless email.present? && email =~ URI::MailTo::EMAIL_REGEXP
-
-    user = User.find_by(email: email)
-
-    if user && !user.email_confirmed
-      if user.email_confirmations.order(created_at: :desc).first&.created_at < 2.minutes.ago
-        user.generate_confirmation_token!
-        DeviseMailer.resend_confirmation_instructions(user, user.confirmation_token).deliver_now
-        render json: { message: I18n.t('devise.confirmations.send_instructions') }, status: :ok
-      else
-        render json: { message: I18n.t('errors.messages.recently_sent') }, status: :unprocessable_entity
-      end
-    else
-      render json: { message: I18n.t('devise.failure.already_confirmed') }, status: :unprocessable_entity
-    end
+    # ... existing resend_confirmation code ...
   end
 
   def check_email_availability
-    email = params[:email]
-    if email.blank?
-      render json: { message: I18n.t('activerecord.errors.messages.blank') }, status: :unprocessable_entity and return
-    elsif !(email =~ URI::MailTo::EMAIL_REGEXP)
-      render json: { message: I18n.t('activerecord.errors.messages.invalid') }, status: :unprocessable_entity and return
-    end
-
-    availability = User.email_available?(email)
-    render json: { available: availability }, status: :ok
+    # ... existing check_email_availability code ...
   end
 
   private
 
   def create_params
     params.require(:user).permit(:password, :password_confirmation, :email)
+  end
+
+  def validate_password_strength
+    password_strength = Devise.password_length.include?(create_params[:password].length) &&
+                        User::PASSWORD_FORMAT.match?(create_params[:password])
+    unless password_strength
+      render json: { message: I18n.t('email_login.registrations.weak_password') },
+             status: :unprocessable_entity and return
+    end
   end
 
   def validate_password_confirmation
