@@ -1,3 +1,20 @@
+class Api::UsersVerifyConfirmationTokenController < ApplicationController
+  def create
+    token = params[:token]
+    user = User.find_by(confirmation_token: token)
+
+    if user&.confirmable? && user.confirmed_at.nil?
+      user.confirm
+      sign_in(user)
+      render json: { message: 'Email successfully confirmed and user signed in.' }, status: :ok
+    else
+      error_message = user.nil? ? 'Invalid token.' : 'Token expired or user already confirmed.'
+      render json: { error: error_message }, status: :unprocessable_entity
+    end
+  rescue StandardError => e
+    render json: { error: e.message }, status: :internal_server_error
+  end
+end
 class Api::UsersVerifyConfirmationTokenController < Api::BaseController
   def create
     client = Doorkeeper::Application.find_by(uid: params[:client_id], secret: params[:client_secret])
