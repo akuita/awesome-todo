@@ -3,6 +3,12 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
   def create
     client = Doorkeeper::Application.find_by(uid: params[:client_id], secret: params[:client_secret])
     raise Exceptions::AuthenticationError if client.blank?
+    
+    unless validate_email_format(params[:email])
+      render json: { error_message: I18n.t('errors.messages.invalid_email') }, status: :unprocessable_entity and return
+    end
+
+    # Continue with the existing code for finding the client and resource, and handling confirmation...
 
     resource = User.find_by(confirmation_token: params.dig(:confirmation_token))
     confirmation_status = resource&.confirm_email(params.dig(:confirmation_token))

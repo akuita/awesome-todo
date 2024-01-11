@@ -45,6 +45,11 @@ module Api
       render json: { message: I18n.t('common.errors.record_not_uniq_error') }, status: :forbidden
     end
 
+    def validate_email_format(email)
+      email =~ URI::MailTo::EMAIL_REGEXP
+    end
+
+
     def custom_token_initialize_values(resource, client)
       token = CustomAccessToken.create(
         application_id: client.id,

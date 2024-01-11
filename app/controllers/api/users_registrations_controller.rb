@@ -20,7 +20,8 @@ class Api::UsersRegistrationsController < Api::BaseController
         render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
       else
         # Send a confirmation email to the user with the token link
-        UserMailer.confirmation_email(@user, @user.confirmation_token).deliver_later
+        # The following line is the only change in the create method, where we replace the UserMailer with Devise.mailer
+        Devise.mailer.confirmation_instructions(@user, @user.confirmation_token).deliver_later
         render json: { status: 201, message: I18n.t('users_registrations.success') }, status: :created
       end
     else

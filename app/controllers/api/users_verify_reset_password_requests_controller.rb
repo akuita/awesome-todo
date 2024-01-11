@@ -1,5 +1,12 @@
 class Api::UsersVerifyResetPasswordRequestsController < Api::BaseController
+  require_dependency 'user'
+
   def create
+    unless validate_email_format(params[:email])
+      @error_message = I18n.t('errors.messages.invalid_email')
+      render json: { error_message: @error_message }, status: :unprocessable_entity and return
+    end
+
     token = Devise.token_generator.digest(User, :reset_password_token, params.dig(:reset_token))
 
     @user = User.find_by(reset_password_token: token)

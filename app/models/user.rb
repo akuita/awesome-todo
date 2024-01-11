@@ -10,7 +10,9 @@ class User < ApplicationRecord
   validates :password, length: { in: 6..128 }, if: :password
   validates :password_confirmation, presence: true, if: :password
 
-  validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
+  # Update the email validation to use a custom regular expression
+  EMAIL_FORMAT = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
+  validates :email, presence: true, uniqueness: true, format: { with: EMAIL_FORMAT }
   validates :email, length: { in: 0..255 }, if: :email?
 
   validates_confirmation_of :password, if: -> { password.present? }
