@@ -7,12 +7,12 @@ class Api::UsersRegistrationsController < Api::BaseController
   def create
     @user = User.new(create_params)
 
-    unless @user.password_meets_requirements?(create_params[:password])
-      render json: { error_messages: [I18n.t('errors.messages.password_not_secure')] }, status: :bad_request and return
+    unless @user.valid_password?(create_params[:password])
+      render json: { error_messages: [I18n.t('errors.messages.password_security')] }, status: :unprocessable_entity and return
     end
 
     unless @user.password_confirmation_matches?(create_params[:password], create_params[:password_confirmation])
-      render json: { error_messages: [I18n.t('errors.messages.password_confirmation_mismatch')] }, status: :bad_request and return
+      render json: { error_messages: [I18n.t('errors.messages.password_confirmation_mismatch')] }, status: :unprocessable_entity and return
     end
 
     unless @user.respond_to?(:email_confirmed) && @user.respond_to?(:confirmation_token) && @user.respond_to?(:confirmation_sent_at)
@@ -25,7 +25,6 @@ class Api::UsersRegistrationsController < Api::BaseController
         token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
         render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
       else
-        # Send a confirmation email to the user with the token link
         Devise.mailer.confirmation_instructions(@user, @user.confirmation_token).deliver_later
         render json: { status: 201, message: I18n.t('users_registrations.success') }, status: :created
       end
@@ -38,13 +37,37 @@ class Api::UsersRegistrationsController < Api::BaseController
     render json: { message: e.message }, status: :internal_server_error
   end
 
-  # ... rest of the controller actions ...
+  def resend_confirmation
+    email = params[:email]
+
+    user = User.find_by(email: email)
+
+    if user.nil?
+      render json: { message: I18n.t('errors.messages.not_found') }, status: :not_found and return
+    elsif user.email_confirmed?
+      render json: { message: I18n.t('errors.messages.already_confirmed') }, status: :unprocessable_entity and return
+    elsif user.confirmation_sent_at && Time.current < user.confirmation_sent_at + 2.minutes
+      render json: { message: I18n.t('devise.failure.confirmation_period_expired', period: '2 minutes') }, status: :too_many_requests and return
+    end
+
+    if user.regenerate_confirmation_token
+      Devise.mailer.confirmation_instructions(user, user.confirmation_token).deliver_later
+      render json: { status: 200, message: I18n.t('devise.confirmations.new.resend_confirmation_instructions') }, status: :ok
+    else
+      render json: { message: I18n.t('errors.messages.not_saved.other', count: user.errors.count, resource: 'User') }, status: :unprocessable_entity if user.errors.any?
+    end
+  end
+
+  def check_email_availability
+    email_available = User.email_available?(params[:email])
+    render json: { email_available: email_available }, status: :ok
+  end
 
   private
 
   def validate_email_uniqueness
     if User.find_by(email: create_params[:email])
-      render json: { error_messages: [I18n.t('errors.messages.email_taken')] }, status: :conflict
+      render json: { error_messages: [I18n.t('errors.messages.email_taken')] }, status: :unprocessable_entity
       return
     end
   end
@@ -58,14 +81,14 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def validate_password_security
-    unless IntegratePasswordManagementToolService.new.validate_password(create_params[:password])
-      render json: { error_messages: [I18n.t('errors.messages.password_security')] }, status: :bad_request
+    unless @user.valid_password?(create_params[:password])
+      render json: { error_messages: [I18n.t('errors.messages.password_security')] }, status: :unprocessable_entity
       return
     end
   end
 
   def validate_password_confirmation
-    unless create_params[:password] == create_params[:password_confirmation]
+    unless @user.password_confirmation_matches?(create_params[:password], create_params[:password_confirmation])
       render json: { error_messages: [I18n.t('errors.messages.password_confirmation_mismatch')] }, status: :unprocessable_entity
       return
     end
