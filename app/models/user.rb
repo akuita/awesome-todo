@@ -23,6 +23,7 @@ class User < ApplicationRecord
   # end for validations
 
   # associations
+  has_one :email_confirmation, class_name: 'EmailConfirmation', foreign_key: 'user_id'
   # Add your new associations here, if any.
 
   # end for associations
