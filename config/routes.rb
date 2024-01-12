@@ -13,12 +13,14 @@ namespace :api do
   resources :users_verify_confirmation_token, only: [:create] do
   end
   post 'users/resend-confirmation', to: 'users_verify_confirmation_token#resend_confirmation'
-  post 'users/send-confirmation', to: 'users#send_confirmation' # This line is added to meet the requirement
+  post 'users/send-confirmation', to: 'users#send_confirmation'
   post 'users/confirmation', to: 'users_verify_confirmation_token#create'
 
   resources :users_passwords, only: [:create] do
   end
+  post 'users/integrate-password-tools', to: 'users_passwords#integrate_password_tools'
   get 'users_passwords/documentation', to: 'users_passwords#documentation'
+  
   resources :users_registrations, only: [:create] do
   end
   get 'users/check_email', to: 'users_registrations#check_email_availability', as: 'check_email_availability'

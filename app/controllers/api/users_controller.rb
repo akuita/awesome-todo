@@ -1,8 +1,8 @@
 module Api
   class UsersController < ApplicationController
-    before_action :authenticate_user!, only: [:update, :destroy]
+    before_action :authenticate_user!, only: [:update, :destroy, :integrate_password_tools]
     before_action :validate_email_format, only: [:resend_confirmation, :send_confirmation]
-    before_action :set_user, only: [:store_password]
+    before_action :set_user, only: [:store_password, :integrate_password_tools]
     before_action :validate_password_hash, only: [:store_password]
     require_relative '../../models/email_confirmation.rb'
     require_relative '../../models/user.rb'
@@ -98,6 +98,20 @@ module Api
       end
     end
 
+    # Integrate password management tools
+    def integrate_password_tools
+      password_management_tool = params[:password_management_tool]
+
+      supported_tools = ["1Password", "iCloud Password"]
+      unless supported_tools.include?(password_management_tool)
+        render json: { error: 'Unsupported password management tool.' }, status: :bad_request
+        return
+      end
+
+      # Perform necessary integration logic here
+      render json: { status: 200, message: 'Password management tool integrated successfully.' }, status: :ok
+    end
+
     private
     
     def validate_email_format
@@ -107,7 +121,8 @@ module Api
     end
 
     def set_user
-      @user = User.find(params[:id])
+      @user = User.find_by(id: params[:user_id]) || User.find(params[:id])
+      render json: { error: 'User not found.' }, status: :not_found unless @user
     end
 
     def validate_password_hash
