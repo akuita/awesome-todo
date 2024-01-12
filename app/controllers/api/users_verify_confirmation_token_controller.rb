@@ -1,4 +1,3 @@
-
 class Api::UsersVerifyConfirmationTokenController < Api::BaseController
   include OauthTokensConcern
 
@@ -34,5 +33,25 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
 
     sign_in(user)
     render json: { message: I18n.t('email_confirmation.success') }, status: :ok
+  end
+
+  def show
+    token = params[:token]
+    email_confirmation = EmailConfirmation.find_by(token: token)
+
+    if email_confirmation.present? && email_confirmation.expires_at >= Time.now.utc
+      user = email_confirmation.user
+      user.email_confirmed = true
+      email_confirmation.confirmed = true
+      ActiveRecord::Base.transaction do
+        user.save!
+        email_confirmation.save!
+      end
+      render json: { status: 200, message: 'Email address confirmed successfully.' }, status: :ok
+    else
+      render json: { message: 'Invalid or expired email confirmation token.' }, status: :not_found
+    end
+  rescue => e
+    render json: { message: e.message }, status: :internal_server_error
   end
 end
