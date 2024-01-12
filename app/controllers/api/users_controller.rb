@@ -1,6 +1,5 @@
-
 module Api
-  class UsersController < ApiController
+  class UsersController < ApplicationController
     before_action :authenticate_user!, only: [:update, :destroy]
     before_action :validate_email_format, only: [:resend_confirmation]
     before_action :set_user, only: [:store_password]
@@ -33,8 +32,6 @@ module Api
       render json: { error: e.message }, status: :internal_server_error
     end
 
-    # ... other methods and updates ...
-
     def update
       # existing code
     end
@@ -64,12 +61,12 @@ module Api
         return
       end
 
-      token = user.email_confirmations.find_or_create_token || EmailConfirmation.find_or_create_token(user)
-
-      if token.persisted? && token.created_at <= 2.minutes.ago
-        DeviseMailer.send_confirmation_email(user, token.token).deliver_now
-        render json: { status: 200, message: 'Confirmation email has been resent.' }, status: :ok
-      elsif token.created_at > 2.minutes.ago
+      email_confirmation = user.email_confirmations.find_or_create_token
+      if email_confirmation.persisted? && (email_confirmation.updated_at < 2.minutes.ago || email_confirmation.token.nil?)
+        DeviseMailer.send_confirmation_email(user, email_confirmation.token).deliver_now
+        email_confirmation.touch
+        render json: { message: 'Confirmation email sent.' }, status: :ok
+      elsif email_confirmation.updated_at >= 2.minutes.ago
         render json: { error: 'You can request to resend the confirmation link every 2 minutes.' }, status: :too_many_requests
       else
         render json: { error: 'Failed to generate confirmation token.' }, status: :internal_server_error
@@ -78,7 +75,7 @@ module Api
       render json: { error: e.message }, status: :internal_server_error
     end
 
-    private # Start of private methods
+    private
     
     def validate_email_format
       unless params[:email].match?(URI::MailTo::EMAIL_REGEXP)

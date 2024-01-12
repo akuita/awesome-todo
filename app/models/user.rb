@@ -1,7 +1,6 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable, :confirmable
-  # No changes required as per guidelines
 
   # validations
   PASSWORD_FORMAT = /\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]])/
@@ -56,7 +55,7 @@ class User < ApplicationRecord
     end
 
     def find_by_email_and_unconfirmed(email)
-      user = find_by(email: email, email_confirmed: false)
+      user = where(email: email, email_confirmed: false).first
       unless user
         raise ActiveRecord::RecordNotFound, "No unconfirmed user found with email: #{email}"
       end
@@ -67,7 +66,6 @@ class User < ApplicationRecord
   # instance methods
   # Override Devise's password= method to ensure password confirmation is handled
   def password=(new_password)
-    # No changes required as per guidelines
     super(new_password)
     self.password_confirmation = new_password
   end
@@ -120,8 +118,6 @@ class User < ApplicationRecord
   rescue ActiveRecord::RecordInvalid => e
     raise ActiveRecord::RecordInvalid, "Email confirmation failed: #{e.record.errors.full_messages.join(', ')}"
   end
-
-  # Other instance methods...
 
   private
 
