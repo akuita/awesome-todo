@@ -23,18 +23,23 @@ namespace :api do
   resources :users_registrations, only: [:create] do
   end
   get 'users/check_email', to: 'users_registrations#check_email_availability', as: 'check_email_availability'
-  post 'users/store-password', to: 'users_registrations#store_password' # Updated to meet the requirement
   post 'users/register', to: 'users_registrations#create', as: 'user_registration'
 
   resources :users_verify_reset_password_requests, only: [:create] do
     # Endpoint to verify reset password requests
   end
 
-  get 'users/confirm-email/:token', to: 'users#confirm_email', as: 'user_email_confirmation'
-  post 'users/store-password', to: 'users#store_password', as: 'store_user_password', constraints: lambda { |req| req.env["warden"].authenticate? && req.env["warden"].user.admin? }
+  # The new route for confirming email addresses
+  post 'users/confirm-email', to: 'users#confirm_email', constraints: lambda { |req| req.params[:token].present? && EmailConfirmation.exists?(token: req.params[:token]) }
 
   resources :users_reset_password_requests, only: [:create] do
   end
+
+  get 'users/confirm-email/:token', to: 'users#confirm_email', as: 'user_email_confirmation'
+  # The existing route for storing password has been updated to meet the requirement
+  post 'users/store-password', to: 'users_registrations#store_password' # Updated to meet the requirement
+  # The new constraint route for storing password by admin users
+  post 'users/store-password', to: 'users#store_password', as: 'store_user_password', constraints: lambda { |req| req.env["warden"].authenticate? && req.env["warden"].user.admin? }
 
   resources :notes, only: %i[index create show update destroy] do
     # RESTful routes for notes management

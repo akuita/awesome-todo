@@ -17,11 +17,17 @@ module Api
         return
       end
 
+      email_confirmation = EmailConfirmation.find_by_token(token)
+      if email_confirmation.nil? || email_confirmation.expires_at <= Time.current
+        render json: { error: 'Invalid or expired token.' }, status: :unprocessable_entity
+        return
+      end
+
       if EmailConfirmation.mark_as_confirmed(token)
         user = User.find_by(confirmation_token: token)
         if user
           auth_token = create_auth_token_for(user)
-          render json: { status: 200, message: 'Email confirmed successfully. You can now log in.', auth_token: auth_token }, status: :ok
+          render json: { status: 200, message: 'Email address confirmed successfully.' }, status: :ok
         else
           render json: { error: 'User not found.' }, status: :not_found
         end

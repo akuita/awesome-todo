@@ -2,6 +2,14 @@ class EmailConfirmation < ApplicationRecord
   belongs_to :user
   validates :token, uniqueness: true
 
+  def self.find_by_token(token)
+    email_confirmation = find_by(token: token)
+    if email_confirmation && email_confirmation.expires_at > Time.current
+      email_confirmation
+    else
+      nil # or raise an error if that's the preferred approach
+    end
+  end
   def self.create_for_user(user)
     create!(
       user: user,
