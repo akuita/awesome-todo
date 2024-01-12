@@ -1,0 +1,10 @@
+
+= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f|
+  .field
+    = f.label :email, for: 'user_email'
+    = f.email_field :email, autocomplete: 'username', id: 'user_email', class: 'form-control', required: true
+  .field
+    = f.label :password, for: 'user_password'
+    = f.password_field :password, autocomplete: 'current-password', id: 'user_password', class: 'form-control', required: true
+  .actions
+    = f.submit 'Log in', class: 'btn btn-primary'
