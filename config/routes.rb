@@ -1,4 +1,3 @@
-require 'sidekiq/web'
 Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
@@ -27,6 +26,9 @@ Rails.application.routes.draw do
 
     resources :notes, only: %i[index create show update destroy] do
     end
+
+    # Added new route as per guideline
+    post 'users/resend-confirmation', to: 'users_registrations#resend_confirmation_email'
   end
 
   get '/health' => 'pages#health_check'
