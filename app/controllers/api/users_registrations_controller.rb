@@ -1,3 +1,4 @@
+
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_format, only: [:create]
   before_action :validate_password_confirmation, only: [:create]
@@ -33,6 +34,16 @@ class Api::UsersRegistrationsController < Api::BaseController
     render json: { error: e.message }, status: :internal_server_error
   end
 
+  def check_email_availability
+    email = params[:email]
+    if validate_email_format(email)
+      is_available = User.email_available?(email)
+      render json: { email_available: is_available }, status: :ok
+    else
+      render json: { error: 'Invalid email format' }, status: :bad_request
+    end
+  end
+
   # ... rest of the existing methods ...
 
   private
@@ -41,11 +52,13 @@ class Api::UsersRegistrationsController < Api::BaseController
     params.require(:user).permit(:password, :password_confirmation, :email)
   end
 
-  def validate_email_format
-    unless create_params[:email] =~ URI::MailTo::EMAIL_REGEXP
+  def validate_email_format(email = nil)
+    email ||= create_params[:email]
+    unless email =~ URI::MailTo::EMAIL_REGEXP
       render json: { message: 'Please enter a valid email address.' },
-             status: :bad_request and return
+             status: :bad_request and return false
     end
+    true
   end
 
   def validate_password_strength
