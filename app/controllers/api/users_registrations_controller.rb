@@ -1,8 +1,8 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_format, only: [:create]
-  before_action :validate_password_complexity, only: [:create]
   before_action :validate_password_confirmation, only: [:create]
   before_action :validate_password_strength, only: [:create]
+  before_action :validate_password_complexity, only: [:create]
 
   def create
     if User.email_registered?(create_params[:email])

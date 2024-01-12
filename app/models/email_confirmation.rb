@@ -1,5 +1,6 @@
 class EmailConfirmation < ApplicationRecord
   belongs_to :user
+  validates :token, uniqueness: true
 
   def self.create_for_user(user)
     create!(

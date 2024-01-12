@@ -1,9 +1,9 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable, :confirmable
+  PASSWORD_FORMAT = /\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]])/
 
   # validations
-  PASSWORD_FORMAT = /\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]])/
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
   validates :password, length: { minimum: 8 }, if: :password
   validates :password_confirmation, presence: true, if: :password
@@ -64,6 +64,19 @@ class User < ApplicationRecord
   end
 
   # instance methods
+  def email_registered?(email)
+    self.class.email_registered?(email)
+  end
+
+  def generate_confirmation_token
+    last_confirmation = email_confirmations.order(created_at: :desc).first
+    if last_confirmation.nil? || last_confirmation.created_at < 2.minutes.ago
+      token_pair = self.class.generate_unique_confirmation_token
+      email_confirmations.create(token: token_pair[:enc], expires_at: 15.minutes.from_now)
+      send_confirmation_email(token_pair[:raw])
+    end
+  end
+
   # Override Devise's password= method to ensure password confirmation is handled
   def password=(new_password)
     super(new_password)
@@ -78,15 +91,6 @@ class User < ApplicationRecord
     raw
   end
 
-  def generate_confirmation_token
-    last_confirmation = email_confirmations.order(created_at: :desc).first
-    if last_confirmation.nil? || last_confirmation.created_at < 2.minutes.ago
-      token_pair = self.class.generate_unique_confirmation_token
-      email_confirmations.create(token: token_pair[:enc], expires_at: 15.minutes.from_now)
-      send_confirmation_email(token_pair[:raw])
-    end
-  end
-
   # Methods for password management tool integration
   def password_complexity_compatible?(password_management_tool)
     complexity_requirements = {
@@ -97,9 +101,7 @@ class User < ApplicationRecord
       contains_special: true
     }
 
-    password = password_management_tool.password
-
-    password.match?(PASSWORD_FORMAT) &&
+    password.to_s.match?(PASSWORD_FORMAT) &&
       complexity_requirements[:min_length] <= password.length &&
       complexity_requirements[:contains_digit] && password.count("0-9") > 0 &&
       complexity_requirements[:contains_uppercase] && password.count("A-Z") > 0 &&
