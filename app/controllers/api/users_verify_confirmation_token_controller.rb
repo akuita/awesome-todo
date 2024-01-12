@@ -1,3 +1,4 @@
+
 class Api::UsersVerifyConfirmationTokenController < Api::BaseController
   include OauthTokensConcern
 
@@ -9,7 +10,7 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
     email_confirmation = EmailConfirmation.find_by(token: token)
 
     if email_confirmation.blank? || token.blank?
-      render json: { error_message: I18n.t('email_confirmation.invalid_token') },
+      render json: { error: 'invalid_token', error_message: I18n.t('email_confirmation.invalid_token') },
              status: :unprocessable_entity and return
     end
 
@@ -25,7 +26,7 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
     end
 
     user.email_confirmed = true
-    email_confirmation.confirmed = true
+    email_confirmation.update(confirmed: true, confirmed_at: Time.now.utc)
     ActiveRecord::Base.transaction do
       user.save!
       email_confirmation.save!
@@ -33,6 +34,8 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
 
     sign_in(user)
     render json: { message: I18n.t('email_confirmation.success') }, status: :ok
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: 'database_error', error_message: e.message }, status: :internal_server_error
   end
 
   def show
@@ -41,7 +44,7 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
 
     if email_confirmation.present? && email_confirmation.expires_at >= Time.now.utc
       user = email_confirmation.user
-      user.email_confirmed = true
+      user.update(email_confirmed: true, confirmed_at: Time.now.utc)
       email_confirmation.confirmed = true
       ActiveRecord::Base.transaction do
         user.save!
@@ -49,9 +52,9 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
       end
       render json: { status: 200, message: 'Email address confirmed successfully.' }, status: :ok
     else
-      render json: { message: 'Invalid or expired email confirmation token.' }, status: :not_found
+      render json: { error: 'invalid_or_expired_token', message: 'Invalid or expired email confirmation token.' }, status: :not_found
     end
   rescue => e
-    render json: { message: e.message }, status: :internal_server_error
+    render json: { error: 'server_error', message: e.message }, status: :internal_server_error
   end
 end
