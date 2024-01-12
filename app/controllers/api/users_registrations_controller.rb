@@ -1,13 +1,13 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_format, only: [:create, :check_email_availability]
-  before_action :find_user_by_id, only: [:store_password]
   before_action :validate_password_confirmation, only: [:create]
   before_action :validate_password_strength, only: [:create]
   before_action :validate_password_complexity, only: [:create]
+  before_action :find_user_by_id, only: [:store_password]
 
   def create
     if User.email_registered?(create_params[:email])
-      render json: { error: 'This email address has been used.' }, status: :conflict
+      render json: { error: 'Email address is already in use.' }, status: :conflict
     else
       @user = User.new(create_params)
       if @user.save
@@ -64,7 +64,7 @@ class Api::UsersRegistrationsController < Api::BaseController
   private
 
   def create_params
-    params.require(:user).permit(:password, :password_confirmation, :email)
+    params.require(:user).permit(:email, :password, :password_confirmation)
   end
 
   def store_password_params
@@ -74,7 +74,7 @@ class Api::UsersRegistrationsController < Api::BaseController
   def validate_email_format(email = nil)
     email ||= params[:email] || create_params[:email]
     unless email =~ URI::MailTo::EMAIL_REGEXP
-      render json: { message: 'Please enter a valid email address.' },
+      render json: { error: 'Invalid email format.' },
              status: :bad_request and return false
     end
     true
@@ -82,27 +82,26 @@ class Api::UsersRegistrationsController < Api::BaseController
 
   def validate_password_strength
     unless create_params[:password].length >= 8
-      render json: { message: 'Password must be at least 8 characters long.' },
+      render json: { error: 'Password does not meet security requirements.' },
              status: :unprocessable_entity and return
     end
     unless User::PASSWORD_FORMAT.match?(create_params[:password])
-      render json: { message: I18n.t('email_login.registrations.weak_password') },
+      render json: { error: 'Password does not meet security requirements.' },
              status: :unprocessable_entity and return
     end
   end
 
   def validate_password_confirmation
     unless create_params[:password] == create_params[:password_confirmation]
-      render json: { message: 'Passwords do not match.' },
+      render json: { error: 'Password confirmation does not match.' },
              status: :bad_request and return
     end
   end
 
   def validate_password_complexity
     # Assuming User model has a method 'password_complexity_compatible?' to check the complexity
-    # If the method does not exist, this will need to be implemented in the User model.
-    unless @user.password_complexity_compatible?
-      render json: { message: 'Password does not meet complexity requirements.' },
+    unless @user.password_complexity_compatible?(create_params[:password])
+      render json: { error: 'Password does not meet security requirements.' },
              status: :unprocessable_entity and return
     end
   end

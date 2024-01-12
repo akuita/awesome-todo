@@ -13,6 +13,11 @@ module Api
     rescue_from ActiveRecord::RecordNotUnique, with: :base_render_record_not_unique
     rescue_from Pundit::NotAuthorizedError, with: :base_render_unauthorized_error
 
+    rescue_from ActiveRecord::RecordInvalid, with: :handle_validation_errors
+    rescue_from ActiveRecord::RecordNotUnique, with: :handle_unique_constraint_violation
+
+    # ... existing code ...
+
     def error_response(resource, error)
       {
         success: false,
@@ -44,6 +49,16 @@ module Api
     def base_render_record_not_unique
       render json: { message: I18n.t('common.errors.record_not_uniq_error') }, status: :forbidden
     end
+
+    def handle_validation_errors(exception)
+      render json: error_response(nil, exception), status: :unprocessable_entity
+    end
+
+    def handle_unique_constraint_violation(exception)
+      render json: error_response(nil, exception), status: :conflict
+    end
+
+    # ... existing code ...
 
     def custom_token_initialize_values(resource, client)
       token = CustomAccessToken.create(
