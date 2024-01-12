@@ -1,3 +1,4 @@
+
 class EmailConfirmation < ApplicationRecord
   belongs_to :user
 
@@ -11,7 +12,7 @@ class EmailConfirmation < ApplicationRecord
     )
   end
 
-  def mark_as_confirmed(token)
+  def self.mark_as_confirmed(token)
     email_confirmation = find_by(token: token)
     if email_confirmation && !email_confirmation.confirmed && email_confirmation.expires_at > Time.current
       user = email_confirmation.user
@@ -21,11 +22,9 @@ class EmailConfirmation < ApplicationRecord
         email_confirmation.update!(confirmed: true, updated_at: Time.current)
       end
       true
-    else
+    rescue => e
       false
     end
-  rescue => e
-    false
   end
 
   def find_or_create_token(user)

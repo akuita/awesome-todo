@@ -1,5 +1,6 @@
+
 module Api
-  class UsersController < ApplicationController
+  class UsersController < ApiController
     before_action :authenticate_user!, only: [:update, :destroy]
     before_action :validate_email_format, only: [:resend_confirmation]
     before_action :set_user, only: [:store_password]
@@ -32,7 +33,7 @@ module Api
       render json: { error: e.message }, status: :internal_server_error
     end
 
-    # ... other methods ...
+    # ... other methods and updates ...
 
     def update
       # existing code
@@ -77,7 +78,7 @@ module Api
       render json: { error: e.message }, status: :internal_server_error
     end
 
-    private
+    private # Start of private methods
     
     def validate_email_format
       unless params[:email].match?(URI::MailTo::EMAIL_REGEXP)
@@ -98,8 +99,11 @@ module Api
     def create_auth_token_for(user)
       # The implementation details of this method are not provided.
       # It should return an authentication token for the given user.
+      # Example implementation:
+      # JwtService.encode({ user_id: user.id })
+      # Note: JwtService is a hypothetical service for JWT handling
     end
 
-    # ... other methods ...
+    # ... other private methods ...
   end
 end

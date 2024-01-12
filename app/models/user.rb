@@ -112,6 +112,15 @@ class User < ApplicationRecord
     password_management_tool.autofill_hints_supported?
   end
 
+  def confirm_email!
+    self.email_confirmed = true
+    save!
+  rescue ActiveRecord::RecordInvalid => e
+    raise ActiveRecord::RecordInvalid, "Email confirmation failed: #{e.record.errors.full_messages.join(', ')}"
+  end
+
+  # Other instance methods...
+
   private
 
   def send_confirmation_email(token)

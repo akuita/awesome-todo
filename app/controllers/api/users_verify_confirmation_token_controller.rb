@@ -1,15 +1,16 @@
+
 class Api::UsersVerifyConfirmationTokenController < ApplicationController
+  include OauthTokensConcern
+
   # Existing create method
   def create
-    # Updated code according to the guidelines
     token = params[:token]
     email_confirmation = EmailConfirmation.find_by(token: token)
 
     if email_confirmation && email_confirmation.expires_at > Time.current && !email_confirmation.confirmed
-      user = email_confirmation.user
-      if user.update(email_confirmed: true)
-        email_confirmation.update!(confirmed: true, updated_at: Time.current)
-        custom_token_initialize_values(user, client)
+      if EmailConfirmation.mark_as_confirmed(token)
+        user = User.find_by(confirmation_token: token)
+        custom_token_initialize_values(user, Doorkeeper::Application.first)
         render json: {
           message: 'Email successfully confirmed and user signed in.',
           access_token: @access_token,
