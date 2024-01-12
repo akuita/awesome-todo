@@ -8,17 +8,16 @@ mount Rswag::Ui::Engine => '/api-docs'
 mount Rswag::Api::Engine => '/api-docs'
 
 post 'users/resend-confirmation', to: 'users#resend_confirmation'
-# Ensure RESTful routes for password management
+
 namespace :api do
   resources :users_verify_confirmation_token, only: [:create] do
   end
   post 'users/resend-confirmation', to: 'users_verify_confirmation_token#resend_confirmation'
+  post 'users/send-confirmation', to: 'users#send_confirmation' # This line is added to meet the requirement
   post 'users/confirmation', to: 'users_verify_confirmation_token#create'
 
   resources :users_passwords, only: [:create] do
   end
-
-  # Documentation for password management endpoints
   get 'users_passwords/documentation', to: 'users_passwords#documentation'
   resources :users_registrations, only: [:create] do
   end
@@ -31,15 +30,21 @@ namespace :api do
 
   # The new route for confirming email addresses
   post 'users/confirm-email', to: 'users#confirm_email', constraints: lambda { |req| req.params[:token].present? && EmailConfirmation.exists?(token: req.params[:token]) }
+  get 'users/confirm-email/:token', to: 'users#confirm_email', as: 'user_email_confirmation'
+
+  # The existing route for storing password has been updated to meet the requirement
+  # The new constraint route for storing password by admin users
+  # We merge the two routes into one with an if condition inside the lambda to check for admin user
+  post 'users/store-password', to: 'users#store_password', as: 'store_user_password', constraints: lambda { |req|
+    if req.env["warden"].authenticate? && req.env["warden"].user.admin?
+      true # Admin users
+    else
+      req.params[:token].present? && EmailConfirmation.exists?(token: req.params[:token]) # Non-admin users with a valid token
+    end
+  }
 
   resources :users_reset_password_requests, only: [:create] do
   end
-
-  get 'users/confirm-email/:token', to: 'users#confirm_email', as: 'user_email_confirmation'
-  # The existing route for storing password has been updated to meet the requirement
-  post 'users/store-password', to: 'users_registrations#store_password' # Updated to meet the requirement
-  # The new constraint route for storing password by admin users
-  post 'users/store-password', to: 'users#store_password', as: 'store_user_password', constraints: lambda { |req| req.env["warden"].authenticate? && req.env["warden"].user.admin? }
 
   resources :notes, only: %i[index create show update destroy] do
     # RESTful routes for notes management

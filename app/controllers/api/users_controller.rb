@@ -1,7 +1,7 @@
 module Api
   class UsersController < ApplicationController
     before_action :authenticate_user!, only: [:update, :destroy]
-    before_action :validate_email_format, only: [:resend_confirmation]
+    before_action :validate_email_format, only: [:resend_confirmation, :send_confirmation]
     before_action :set_user, only: [:store_password]
     before_action :validate_password_hash, only: [:store_password]
     require_relative '../../models/email_confirmation.rb'
@@ -11,7 +11,6 @@ module Api
     def confirm_email
       token = params[:token]
 
-      # Validation for token presence
       if token.blank?
         render json: { error: 'Token is required.' }, status: :bad_request
         return
@@ -27,7 +26,7 @@ module Api
         user = User.find_by(confirmation_token: token)
         if user
           auth_token = create_auth_token_for(user)
-          render json: { status: 200, message: 'Email address confirmed successfully.' }, status: :ok
+          render json: { status: 200, message: 'Email confirmed successfully. You can now log in.', auth_token: auth_token }, status: :ok
         else
           render json: { error: 'User not found.' }, status: :not_found
         end
@@ -79,6 +78,24 @@ module Api
       end
     rescue StandardError => e
       render json: { error: e.message }, status: :internal_server_error
+    end
+
+    def send_confirmation
+      email = params[:email]
+      user = User.find_by_email_and_unconfirmed(email)
+
+      if user.nil?
+        render json: { error: 'Email not registered or already confirmed.' }, status: :not_found
+        return
+      end
+
+      email_confirmation = EmailConfirmation.find_or_create_token(user)
+      if email_confirmation.persisted?
+        DeviseMailer.send_confirmation_email(user, email_confirmation.token).deliver_now
+        render json: { status: 202, message: 'Confirmation email sent successfully.' }, status: :accepted
+      else
+        render json: { error: 'Failed to generate confirmation token.' }, status: :internal_server_error
+      end
     end
 
     private
