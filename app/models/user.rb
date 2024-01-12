@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable, :confirmable
+  # No changes required as per guidelines
 
   # validations
   PASSWORD_FORMAT = /\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]])/
@@ -66,6 +67,7 @@ class User < ApplicationRecord
   # instance methods
   # Override Devise's password= method to ensure password confirmation is handled
   def password=(new_password)
+    # No changes required as per guidelines
     super(new_password)
     self.password_confirmation = new_password
   end

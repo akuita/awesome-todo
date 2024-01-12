@@ -1,4 +1,3 @@
-
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_format, only: [:create]
   before_action :validate_password_confirmation, only: [:create]
@@ -43,8 +42,6 @@ class Api::UsersRegistrationsController < Api::BaseController
       render json: { error: 'Invalid email format' }, status: :bad_request
     end
   end
-
-  # ... rest of the existing methods ...
 
   private
 

@@ -17,7 +17,8 @@ class Api::UsersPasswordsController < Api::BaseController
     response.set_header('X-Autofill', 'new-password')
 
     if current_resource_owner.valid_password?(params.dig(:old_password))
-      if current_resource_owner.update(password: params.dig(:new_password))
+      # Use Devise's method for updating passwords
+      if current_resource_owner.reset_password(params.dig(:new_password), params.dig(:password_confirmation))
         # Clear any sensitive password information from memory
         current_resource_owner.clean_up_passwords
 
@@ -33,13 +34,9 @@ class Api::UsersPasswordsController < Api::BaseController
 
   private
 
-  # Placeholder methods for User model integration
-  # These methods will be implemented in the User model
-
   def validate_password_params
-    # Validate password parameters to ensure they meet the complexity requirements
-    # and are compatible with password management tools
-    # This method should be implemented based on the PASSWORD_FORMAT validation in the User model
-    # and the Devise settings in /config/initializers/devise.rb
+    # Ensure the password and confirmation are present
+    params.require(:new_password)
+    params.require(:password_confirmation)
   end
 end
