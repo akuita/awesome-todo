@@ -1,5 +1,6 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_format, only: [:create]
+  before_action :validate_password_complexity, only: [:create]
   before_action :validate_password_confirmation, only: [:create]
   before_action :validate_password_strength, only: [:create]
 
@@ -73,6 +74,15 @@ class Api::UsersRegistrationsController < Api::BaseController
     unless create_params[:password] == create_params[:password_confirmation]
       render json: { message: 'Passwords do not match.' },
              status: :bad_request and return
+    end
+  end
+
+  def validate_password_complexity
+    # Assuming User model has a method 'password_complexity_compatible?' to check the complexity
+    # If the method does not exist, this will need to be implemented in the User model.
+    unless @user.password_complexity_compatible?
+      render json: { message: 'Password does not meet complexity requirements.' },
+             status: :unprocessable_entity and return
     end
   end
 end

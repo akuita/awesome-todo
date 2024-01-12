@@ -55,7 +55,7 @@ class User < ApplicationRecord
     end
 
     def find_by_email_and_unconfirmed(email)
-      user = where(email: email, email_confirmed: false).first
+      user = find_by(email: email, email_confirmed: false)
       unless user
         raise ActiveRecord::RecordNotFound, "No unconfirmed user found with email: #{email}"
       end
@@ -97,7 +97,9 @@ class User < ApplicationRecord
       contains_special: true
     }
 
-    password.to_s.match?(PASSWORD_FORMAT) &&
+    password = password_management_tool.password
+
+    password.match?(PASSWORD_FORMAT) &&
       complexity_requirements[:min_length] <= password.length &&
       complexity_requirements[:contains_digit] && password.count("0-9") > 0 &&
       complexity_requirements[:contains_uppercase] && password.count("A-Z") > 0 &&
