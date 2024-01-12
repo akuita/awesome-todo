@@ -1,4 +1,3 @@
-
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :throttle_email_confirmation, only: [:create]
 
@@ -56,7 +55,8 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def resend_confirmation_email
-    email = resend_confirmation_params[:email]
+    email = resend_confirmation_params[:email].downcase
+
     user = User.find_by(email: email)
 
     if user.nil? || user.email_confirmed
@@ -65,12 +65,12 @@ class Api::UsersRegistrationsController < Api::BaseController
     else
       email_confirmation = user.email_confirmations.order(created_at: :desc).first
       if email_confirmation && email_confirmation.created_at > 2.minutes.ago
-        remaining_time = (2.minutes.since(email_confirmation.created_at) - Time.current).round
+        remaining_time = (2.minutes.since(email_confirmation.created_at) - Time.current).to_i
         render json: { message: I18n.t('email_login.registrations.wait_time', time: remaining_time) }, status: :too_many_requests
       else
-        token = user.generate_confirmation_token
+        token = SecureRandom.hex(10)
         email_confirmation.update(token: token, created_at: Time.current)
-        UserMailer.confirmation_email(user, token).deliver_now
+        UserMailer.confirmation_email(user, token).deliver_later
         render json: { status: 200, message: I18n.t('email_login.registrations.confirmation_resent') }, status: :ok
       end
     end
@@ -110,5 +110,4 @@ class Api::UsersRegistrationsController < Api::BaseController
   def user_params
     params.require(:user).permit(:email, :password, :password_confirmation)
   end
-
 end
