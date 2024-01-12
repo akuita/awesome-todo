@@ -1,6 +1,6 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
-         :trackable, :recoverable, :lockable
+         :trackable, :recoverable, :lockable, :confirmable
 
   # validations
 
@@ -14,6 +14,11 @@ class User < ApplicationRecord
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
 
   # end for validations
+
+  # associations
+  has_one :email_confirmation, class_name: 'EmailConfirmation', foreign_key: 'user_id', dependent: :destroy
+
+  # end for associations
 
   def generate_reset_password_token
     raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
