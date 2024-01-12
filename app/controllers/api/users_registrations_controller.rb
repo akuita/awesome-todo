@@ -1,11 +1,29 @@
-
 class Api::UsersRegistrationsController < Api::BaseController
+  before_action :throttle_email_confirmation, only: [:create]
+
   def create
-    @user = User.new(create_params)
+    user_params = create_params
+    existing_user = User.find_by(email: user_params[:email])
+
+    if existing_user
+      render json: { message: I18n.t('email_login.registrations.email_already_in_use') }, status: :unprocessable_entity and return
+    end
+
+    @user = User.new(user_params)
+    @user.email_confirmed = false
+
     if @user.save
+      email_confirmation = EmailConfirmation.create!(
+        user: @user,
+        token: SecureRandom.hex(10),
+        confirmed: false,
+        expires_at: 2.days.from_now
+      )
+      UserMailer.confirmation_email(@user).deliver_later
+
       if Rails.env.staging?
         # to show token in staging
-        token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
+        token = email_confirmation.token
         render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
       else
         head :ok, message: I18n.t('common.200') and return
@@ -40,6 +58,15 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   private
+
+  def throttle_email_confirmation
+    return unless @user
+
+    last_email_confirmation = EmailConfirmation.where(user_id: @user.id).order(created_at: :desc).first
+    if last_email_confirmation && last_email_confirmation.created_at > 2.minutes.ago
+      render json: { message: I18n.t('email_login.registrations.throttle_email_confirmation') }, status: :too_many_requests and return
+    end
+  end
 
   def create_params
     params.require(:user).permit(:password, :password_confirmation, :email)
