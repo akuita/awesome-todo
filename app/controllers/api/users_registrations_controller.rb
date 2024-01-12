@@ -1,3 +1,4 @@
+
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :throttle_email_confirmation, only: [:create]
 
@@ -29,7 +30,7 @@ class Api::UsersRegistrationsController < Api::BaseController
     @user = User.new(user_params)
     @user.email_confirmed = false
 
-    if @user.save
+    if @user.save && set_encrypted_password_and_confirmation_token
       email_confirmation = EmailConfirmation.create!(
         user: @user,
         token: SecureRandom.hex(10),
@@ -95,4 +96,19 @@ class Api::UsersRegistrationsController < Api::BaseController
   def resend_confirmation_params
     params.require(:user).permit(:email)
   end
+
+  def set_encrypted_password_and_confirmation_token
+    @user.encrypted_password = User.new.send(:password_digest, user_params[:password])
+    @user.confirmation_token = SecureRandom.hex(10)
+    @user.confirmation_sent_at = Time.current
+    @user.save
+  rescue ActiveRecord::RecordInvalid => e
+    logger.error "Failed to set encrypted password and confirmation token: #{e.message}"
+    false
+  end
+
+  def user_params
+    params.require(:user).permit(:email, :password, :password_confirmation)
+  end
+
 end
