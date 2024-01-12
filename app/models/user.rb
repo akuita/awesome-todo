@@ -1,10 +1,11 @@
+
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable, :confirmable
 
   # validations
 
-  PASSWORD_FORMAT = //
+  PASSWORD_FORMAT = /\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]])/
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
 
   validates :email, presence: true, uniqueness: true

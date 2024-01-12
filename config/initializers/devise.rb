@@ -1,10 +1,11 @@
+
 Devise.setup do |config|
   require 'devise/orm/active_record'
   config.authentication_keys = [:email]
   config.case_insensitive_keys = [:email]
   config.strip_whitespace_keys = [:email]
   config.skip_session_storage = [:http_auth]
-  config.stretches = Rails.env.test? ? 1 : 11
+  config.stretches = Rails.env.test? ? 1 : 12
   config.reconfirmable = true
   config.expire_all_remember_me_on_sign_out = true
   config.remember_for = 24.hours
@@ -12,7 +13,9 @@ Devise.setup do |config|
   config.reset_password_within = 1.hour
   config.maximum_attempts = 10
   config.unlock_strategy = :time
-
+  config.encryptor = :bcrypt
+  config.pepper = 'some_random_string'
+  config.secret_key = 'another_secure_random_string'
   config.unlock_in = 6.hours
 
   config.lock_strategy = :failed_attempts
