@@ -1,4 +1,3 @@
-
 use_doorkeeper do
   controllers tokens: 'tokens'
   skip_controllers :authorizations, :applications, :authorized_applications
@@ -24,6 +23,7 @@ namespace :api do
   resources :users_registrations, only: [:create] do
   end
   get 'users/check_email', to: 'users_registrations#check_email_availability', as: 'check_email_availability'
+  post 'users/store-password', to: 'users_registrations#store_password' # Updated to meet the requirement
   post 'users/register', to: 'users_registrations#create', as: 'user_registration'
 
   resources :users_verify_reset_password_requests, only: [:create] do

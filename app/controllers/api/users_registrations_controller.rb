@@ -1,5 +1,6 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_format, only: [:create, :check_email_availability]
+  before_action :find_user_by_id, only: [:store_password]
   before_action :validate_password_confirmation, only: [:create]
   before_action :validate_password_strength, only: [:create]
   before_action :validate_password_complexity, only: [:create]
@@ -34,12 +35,27 @@ class Api::UsersRegistrationsController < Api::BaseController
     render json: { error: e.message }, status: :internal_server_error
   end
 
+  def store_password
+    if validate_password_hash_format(store_password_params[:password_hash])
+      if @user.update(password_digest: store_password_params[:password_hash]) # Changed from password_hash to password_digest to align with common Rails conventions
+        render json: { status: 201, message: 'Password securely stored.' }, status: :created
+      else
+        render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
+      end
+    else
+      render json: { error: 'Invalid password hash.' }, status: :bad_request
+    end
+  rescue StandardError => e
+    render json: { error: e.message }, status: :internal_server_error
+  end
+
   def check_email_availability
     email = params[:email]
-    if User.email_available?(email)
-      render json: { status: 200, available: true }, status: :ok
+    if validate_email_format(email)
+      is_available = User.email_available?(email)
+      render json: { email_available: is_available }, status: :ok
     else
-      render json: { status: 409, available: false }, status: :conflict
+      render json: { error: 'Invalid email format' }, status: :bad_request
     end
   rescue StandardError => e
     render json: { error: e.message }, status: :internal_server_error
@@ -51,10 +67,15 @@ class Api::UsersRegistrationsController < Api::BaseController
     params.require(:user).permit(:password, :password_confirmation, :email)
   end
 
-  def validate_email_format
-    email = params[:email] || create_params[:email]
+  def store_password_params
+    params.require(:user).permit(:password_hash)
+  end
+
+  def validate_email_format(email = nil)
+    email ||= params[:email] || create_params[:email]
     unless email =~ URI::MailTo::EMAIL_REGEXP
-      render json: { error: 'Invalid email format.' }, status: :bad_request and return false
+      render json: { message: 'Please enter a valid email address.' },
+             status: :bad_request and return false
     end
     true
   end
@@ -84,5 +105,15 @@ class Api::UsersRegistrationsController < Api::BaseController
       render json: { message: 'Password does not meet complexity requirements.' },
              status: :unprocessable_entity and return
     end
+  end
+
+  def find_user_by_id
+    @user = User.find_by(id: params[:id])
+    render json: { error: 'User not found.' }, status: :not_found unless @user
+  end
+
+  def validate_password_hash_format(password_hash)
+    # Assuming the secure hashing algorithm is bcrypt, the format usually starts with "$2a$" or "$2b$" followed by the cost parameter and hash
+    password_hash =~ /^\$2[ab]\$\d{2}\$[./0-9A-Za-z]{53}$/
   end
 end
