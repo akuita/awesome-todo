@@ -54,6 +54,24 @@ class Api::UsersRegistrationsController < Api::BaseController
     render json: { message: I18n.t('common.errors.internal_server_error') }, status: :internal_server_error
   end
 
+  def store_password
+    user_params = create_params
+
+    if user_params[:encrypted_password].blank?
+      render json: { message: "Password is required." }, status: :bad_request and return
+    end
+
+    @user = User.new(encrypted_password: user_params[:encrypted_password])
+
+    if @user.save
+      render json: { status: 201, message: "Password stored securely." }, status: :created
+    else
+      render json: { message: "Failed to store password." }, status: :internal_server_error
+    end
+  rescue StandardError => e
+    render json: { message: e.message }, status: :internal_server_error
+  end
+
   def resend_confirmation_email
     email = resend_confirmation_params[:email].downcase
 
@@ -90,7 +108,7 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def create_params
-    params.require(:user).permit(:password, :password_confirmation, :email)
+    params.require(:user).permit(:password, :password_confirmation, :email, :encrypted_password)
   end
 
   def resend_confirmation_params
