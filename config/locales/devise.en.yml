@@ -1,3 +1,4 @@
+
 en:
   activerecord:
     attributes:
@@ -31,6 +32,7 @@ en:
         other: Users
   devise:
     confirmations:
+      email_confirmed: "Your email has been successfully confirmed and your account is now active."
       confirmed: Your email address has been successfully confirmed.
       new:
         resend_confirmation_instructions: Resend confirmation instructions

@@ -1,3 +1,4 @@
+
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
@@ -32,6 +33,15 @@ class User < ApplicationRecord
     self.reset_password_sent_at = Time.now.utc
     save(validate: false)
     raw
+  end
+
+  def confirm_email(confirmation_token)
+    token_record = email_confirmation_token
+    return false unless token_record && token_record.token == confirmation_token && confirmation_sent_at >= 2.days.ago
+
+    self.email_confirmed = true
+    token_record.destroy
+    save
   end
 
   class << self
