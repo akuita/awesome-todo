@@ -48,6 +48,16 @@ class Api::UsersRegistrationsController < Api::BaseController
     end
   end
 
+  def handle_registration_errors
+    error_code = params[:error_code]
+    case error_code
+    when 'ERR_INVALID_EMAIL'
+      render json: { status: 200, message: I18n.t('errors.messages.invalid_email') }, status: :ok
+    else
+      render json: { message: 'Unknown error occurred.' }, status: :bad_request
+    end
+  end
+
   private
 
   def create_params
