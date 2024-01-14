@@ -19,7 +19,12 @@ class Api::UsersRegistrationsController < Api::BaseController
     if @user.save
       Devise.mailer.send_confirmation_instructions(@user)
       BaseService.new.log_event(@user, 'User Registration Attempt')
-      head :ok, message: I18n.t('common.user_registration_success') and return
+      if Rails.env.staging?
+        token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
+        render json: { message: I18n.t('common.user_registration_success'), token: token }, status: :ok and return
+      else
+        head :ok, message: I18n.t('common.user_registration_success') and return
+      end
     else
       error_messages = @user.errors.messages
       render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
@@ -62,6 +67,18 @@ class Api::UsersRegistrationsController < Api::BaseController
     end
   rescue => e
     render json: { error: e.message }, status: :internal_server_error
+  end
+
+  def registration_errors
+    error_code = params[:error_code]
+    error_messages = {
+      'ERR_INVALID_EMAIL' => 'Please enter a valid email address.',
+      'password_mismatch' => 'Password does not match the confirmation.',
+      # Add more error codes and messages here
+    }
+    message = error_messages[error_code] || 'Unknown error occurred.'
+    status = error_messages[error_code] ? :ok : :bad_request
+    render json: { status: status, message: message }, status: status
   end
 
   private
