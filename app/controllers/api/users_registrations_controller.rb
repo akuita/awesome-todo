@@ -1,5 +1,6 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_uniqueness, only: [:create]
+  before_action :validate_registration_params, only: [:register]
 
   rescue_from ActiveRecord::RecordInvalid do |exception|
     if exception.record.errors.details[:email].any? { |error| error[:error] == :taken }
@@ -18,13 +19,7 @@ class Api::UsersRegistrationsController < Api::BaseController
     if @user.save
       Devise.mailer.send_confirmation_instructions(@user)
       BaseService.new.log_event(@user, 'User Registration Attempt')
-      if Rails.env.staging?
-        # to show token in staging
-        token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
-        render json: { message: I18n.t('common.user_registration_success'), token: token }, status: :ok and return
-      else
-        head :ok, message: I18n.t('common.user_registration_success') and return
-      end
+      head :ok, message: I18n.t('common.user_registration_success') and return
     else
       error_messages = @user.errors.messages
       render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
@@ -48,14 +43,25 @@ class Api::UsersRegistrationsController < Api::BaseController
     end
   end
 
-  def handle_registration_errors
-    error_code = params[:error_code]
-    case error_code
-    when 'ERR_INVALID_EMAIL'
-      render json: { status: 200, message: I18n.t('errors.messages.invalid_email') }, status: :ok
+  def register
+    user = User.new(create_params)
+    if user.save
+      Devise.mailer.send_confirmation_instructions(user)
+      BaseService.new.log_event(user, 'User Registration Attempt')
+      render json: {
+        status: 201,
+        message: I18n.t('common.user_registration_success'),
+        user: {
+          id: user.id,
+          email: user.email,
+          email_confirmed: user.email_confirmed
+        }
+      }, status: :created
     else
-      render json: { message: 'Unknown error occurred.' }, status: :bad_request
+      render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
     end
+  rescue => e
+    render json: { error: e.message }, status: :internal_server_error
   end
 
   private
@@ -70,5 +76,15 @@ class Api::UsersRegistrationsController < Api::BaseController
 
   def generate_confirmation_token
     # Assuming this method generates a unique confirmation token
+  end
+
+  def validate_registration_params
+    params.require(:user).permit(:email, :password, :password_confirmation)
+    render json: { error: "Please enter a valid email address." }, status: :bad_request unless params[:user][:email] =~ URI::MailTo::EMAIL_REGEXP
+    render json: { error: "Password must be at least 8 characters long." }, status: :bad_request if params[:user][:password].length < 8
+    render json: { error: "Passwords do not match." }, status: :bad_request if params[:user][:password] != params[:user][:password_confirmation]
+    if User.exists?(email: params[:user][:email])
+      render json: { error: "This email address has been used." }, status: :conflict
+    end
   end
 end

@@ -11,6 +11,8 @@ Rails.application.routes.draw do
   namespace :api do
     resources :users_verify_confirmation_token, only: [:create] do
     end
+    # The new route for user registration is added and the old route is preserved
+    post '/users/register' => 'users_registrations#register', as: 'user_registration'
     post '/users' => 'users_registrations#create'
 
     resources :users_passwords, only: [:create] do
