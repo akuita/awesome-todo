@@ -1,6 +1,8 @@
+
 Devise.setup do |config|
   require 'devise/orm/active_record'
   config.authentication_keys = [:email]
+  config.encryptor = :your_preferred_encryptor
   config.case_insensitive_keys = [:email]
   config.strip_whitespace_keys = [:email]
   config.skip_session_storage = [:http_auth]
@@ -12,10 +14,9 @@ Devise.setup do |config|
   config.reset_password_within = 1.hour
   config.maximum_attempts = 10
   config.unlock_strategy = :time
-
   config.unlock_in = 6.hours
-
   config.lock_strategy = :failed_attempts
+  config.mailer_sender = 'please-change-me@example.com'
   config.sign_out_via = :delete
   config.sign_in_after_reset_password = false
   config.confirm_within = 2.days
