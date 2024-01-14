@@ -2,7 +2,7 @@
 class BaseService
   def initialize(*_args); end
 
-  def logger
+  public def logger
     @logger ||= Rails.logger
   end
 

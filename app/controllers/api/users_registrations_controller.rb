@@ -1,6 +1,14 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_uniqueness, only: [:create]
 
+  rescue_from ActiveRecord::RecordInvalid do |exception|
+    if exception.record.errors.details[:email].any? { |error| error[:error] == :taken }
+      render json: { error: I18n.t('errors.messages.taken', attribute: 'Email') }, status: :unprocessable_entity
+    else
+      render json: { error: exception.record.errors.full_messages.join(', ') }, status: :unprocessable_entity
+    end
+  end
+
   def create
     @user = User.new(create_params)
     @user.email_confirmed = false

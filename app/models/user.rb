@@ -7,8 +7,9 @@ class User < ApplicationRecord
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
   validates :password, confirmation: true, if: -> { new_record? || password.present? }
 
-  validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
+  # Update the email validation for uniqueness with case insensitive
   # The length validation for email is removed as it's redundant with the new email validations
+  validates :email, presence: true, uniqueness: { case_sensitive: false }, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :encrypted_password, presence: true, if: -> { new_record? || encrypted_password.present? }
   validates :sign_in_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, if: -> { sign_in_count.present? }
   validates :failed_attempts, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, if: -> { failed_attempts.present? }

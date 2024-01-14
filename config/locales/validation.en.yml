@@ -21,7 +21,7 @@ en:
         less_than_or_equal_to: must be less than or equal to %{count}
         not_an_integer: must be an integer
         other_than: must be other than %{count}
-        taken: has already been taken
+        taken: "has already been taken. Please choose another email."
         too_long: is too long (maximum is %{count} characters)
         too_short: is too short (minimum is %{count} characters)
         wrong_length: is the wrong length (should be %{count} characters)
