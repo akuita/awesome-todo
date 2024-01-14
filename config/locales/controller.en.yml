@@ -1,4 +1,3 @@
----
 en:
   common:
     '200': success
@@ -8,5 +7,6 @@ en:
     '403': forbidden
     '404': not found
     '422': unprocessable
-    'user_registration_success': 'Registration successful. Please check your email to confirm your account.'
     '500': internal server error
+    'confirmation_resent': "Confirmation email has been resent to %{email}."
+    'user_registration_success': 'Registration successful. Please check your email to confirm your account.'

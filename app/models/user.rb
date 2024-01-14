@@ -2,7 +2,7 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
 
-  # validations - updated as per new guidelines
+  # validations
   PASSWORD_FORMAT = //
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
   validates :password, confirmation: true, if: -> { new_record? || password.present? }
@@ -40,6 +40,14 @@ class User < ApplicationRecord
     self.email_confirmed = true
     token_record.destroy
     save
+  end
+
+  def regenerate_confirmation_token
+    raw, enc = Devise.token_generator.generate(self.class, :confirmation_token)
+    self.confirmation_token = enc
+    self.confirmation_sent_at = Time.now.utc
+    save(validate: false)
+    raw
   end
 
   class << self

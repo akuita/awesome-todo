@@ -1,20 +1,42 @@
-
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_uniqueness, only: [:create]
 
   def create
-    email = params[:email]
-    password_hash = params[:password_hash]
-    @user = User.new(email: email, encrypted_password: password_hash, email_confirmed: false)
+    @user = User.new(create_params)
+    @user.email_confirmed = false
     @user.confirmation_token = generate_confirmation_token
     @user.confirmation_sent_at = Time.current
 
     if @user.save
       Devise.mailer.send_confirmation_instructions(@user)
       BaseService.new.log_event(@user, 'User Registration Attempt')
-      render json: { message: I18n.t('common.user_registration_success') }, status: :ok
+      if Rails.env.staging?
+        # to show token in staging
+        token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
+        render json: { message: I18n.t('common.user_registration_success'), token: token }, status: :ok and return
+      else
+        head :ok, message: I18n.t('common.user_registration_success') and return
+      end
     else
-      render json: { error_messages: @user.errors.full_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') }, status: :unprocessable_entity
+      error_messages = @user.errors.messages
+      render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
+             status: :unprocessable_entity
+    end
+  end
+
+  def resend_confirmation
+    email = params[:email]
+
+    return render json: { message: I18n.t('errors.messages.not_found') }, status: :not_found unless email.present? && email =~ URI::MailTo::EMAIL_REGEXP
+
+    user = User.find_by(email: email)
+
+    if user && !user.email_confirmed && user.confirmation_sent_at < 2.minutes.ago
+      user.regenerate_confirmation_token
+      ResendConfirmationEmailJob.perform_later(user.id)
+      render json: { message: I18n.t('devise.confirmations.send_instructions') }, status: :ok
+    else
+      render json: { message: I18n.t('errors.messages.already_confirmed') }, status: :unprocessable_entity
     end
   end
 
