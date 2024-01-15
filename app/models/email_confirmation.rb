@@ -21,17 +21,22 @@ class EmailConfirmation < ApplicationRecord
     confirmed
   end
 
-  def generate_unique_confirmation_token
-    begin
+  # This method combines the logic of both generate_token and generate_unique_confirmation_token
+  def generate_token
+    loop do
+      # Use SecureRandom.urlsafe_base64 for better entropy
       self.token = SecureRandom.urlsafe_base64
-    end while self.class.exists?(token: token)
-    self.expires_at = 15.minutes.from_now
+      # Set expires_at to 24 hours from now, or modify as needed
+      self.expires_at = 24.hours.from_now
+      break unless EmailConfirmation.exists?(token: token)
+    end
     save
   end
 
+  # This method is kept from the existing code to handle creating a confirmation record
   def create_confirmation_record(user_id)
     self.user_id = user_id
-    generate_unique_confirmation_token # Replaced the call to generate_token with the new method
+    generate_token # Use the combined generate_token method
     self.confirmed = false
     self.created_at = Time.current
     save

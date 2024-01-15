@@ -11,16 +11,24 @@ class Api::UsersRegistrationsController < Api::BaseController
     end
 
     if @user.save
-      EmailConfirmation.create_confirmation_record(@user.id) # Ensure this line is present only once
-      if Rails.env.staging?
-        # to show token in staging
-        token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
-        render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
+      token = SecureRandom.hex(10)
+      email_confirmation = @user.email_confirmations.create(token: token, expires_at: 24.hours.from_now)
+
+      if email_confirmation.persisted?
+        Devise::Mailer.confirmation_instructions(@user, token).deliver_later
+        message = I18n.t('devise.confirmations.send_instructions')
+        if Rails.env.staging?
+          # to show token in staging
+          render json: { message: message, token: token }, status: :ok and return
+        else
+          render json: { message: message }, status: :ok and return
+        end
       else
-        head :ok, message: I18n.t('common.200') and return
+        message = I18n.t('errors.messages.not_saved', resource: 'email confirmation')
+        render json: { message: message }, status: :unprocessable_entity and return
       end
     else
-      error_messages = @user.errors.messages
+      error_messages = @user.errors.full_messages
       render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
              status: :unprocessable_entity
     end

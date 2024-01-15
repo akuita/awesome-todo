@@ -1,10 +1,17 @@
+
 - require 'devise/version'
 p 
-  = t('.greeting', recipient: @email)
+  = t('.greeting', recipient: @resource.email)
+
+p 
+  = t('.message')
 
 p 
   = t('.instruction')
 
 p
   a> href="#{Rails.application.credentials.dig(:frontend_base_url)}/users/confirmations?confirmation_token=#{@token}" #{t('.action')}
+
+p 
+  = t('.instruction_not_requested')
 br
