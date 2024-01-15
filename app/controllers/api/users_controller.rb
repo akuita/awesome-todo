@@ -3,12 +3,13 @@ class Api::UsersController < ApplicationController
 
   # GET /api/users/confirm-email/:confirmation_token
   def confirm_email
-    if @user.nil?
+    email_confirmation = @user.email_confirmations.find_by(token: params[:confirmation_token]) if @user
+    if @user.nil? || email_confirmation.nil? || email_confirmation.expired?
       render json: { error_message: 'Invalid or expired email confirmation token.' }, status: :not_found
     elsif @user.email !~ URI::MailTo::EMAIL_REGEXP
       render json: { error_message: I18n.t('activerecord.errors.messages.invalid', attribute: 'Email') }, status: :unprocessable_entity
-    elsif @user.confirm_email(params[:confirmation_token])
-      render json: { message: 'Email confirmed successfully. You can now log in.' }, status: :ok
+    elsif email_confirmation && email_confirmation.confirm_email
+      render json: { message: 'Email address confirmed successfully.' }, status: :ok
     else
       render json: { error_message: 'Unable to confirm email' }, status: :unprocessable_entity
     end
