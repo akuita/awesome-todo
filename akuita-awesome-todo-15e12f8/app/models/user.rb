@@ -3,8 +3,8 @@ class User < ApplicationRecord
          :trackable, :recoverable, :lockable
 
   # validations
-  PASSWORD_FORMAT = //
-  validates :password, format: { with: /\A(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}\z/ }, if: -> { new_record? || password.present? }
+  PASSWORD_FORMAT = /\A(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}\z/
+  validates :password, format: { with: PASSWORD_FORMAT }, if: -> { new_record? || password.present? }
   validates :password, confirmation: true, if: -> { new_record? || password.present? }
 
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
@@ -33,6 +33,12 @@ class User < ApplicationRecord
     self.reset_password_sent_at = Time.now.utc
     save(validate: false)
     raw
+  end
+
+  def confirm_email
+    self.email_confirmed = true
+    self.updated_at = Time.current
+    save(validate: false)
   end
 
   class << self

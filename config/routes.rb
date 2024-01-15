@@ -20,9 +20,10 @@ Rails.application.routes.draw do
     resources :users_registrations, only: [:create] do
     end
 
+    # The route for checking email availability is preserved from the existing code
     get '/users/check_email_availability' => 'users#check_email_availability'
     # The new route for email confirmation is correctly defined according to the requirement.
-    get '/users/confirm-email/:confirmation_token' => 'users#confirm_email'
+    get '/users/confirm-email/:confirmation_token' => 'users#confirm_email', as: 'user_email_confirmation'
     # The route for registration errors is preserved from the new code
     get '/users/registration-errors' => 'users_registrations#registration_errors'
 
