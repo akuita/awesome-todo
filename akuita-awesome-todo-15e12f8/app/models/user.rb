@@ -29,6 +29,12 @@ class User < ApplicationRecord
   # Define any custom instance or class methods here
 
   def generate_reset_password_token
+  end
+
+  def self.validate_email_format(email)
+    email =~ /\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/
+  end
+
     raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
     self.reset_password_token   = enc
     self.reset_password_sent_at = Time.now.utc

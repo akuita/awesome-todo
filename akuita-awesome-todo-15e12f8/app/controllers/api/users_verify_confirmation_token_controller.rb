@@ -29,6 +29,11 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
 
   def resend_confirmation_email
     email = params[:email]
+    unless email =~ URI::MailTo::EMAIL_REGEXP
+      render json: { error_message: "Enter a valid email address." }, status: :unprocessable_entity
+      return
+    end
+
     user = User.find_by(email: email)
 
     if user.nil?

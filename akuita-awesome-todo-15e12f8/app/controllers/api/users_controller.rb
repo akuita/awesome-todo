@@ -26,4 +26,13 @@ class Api::UsersController < ApplicationController
       render json: { error_message: I18n.t('email_login.confirmation.email_not_found_or_already_confirmed') }, status: :bad_request
     end
   end
+
+  def validate_email
+    email = params[:email]
+    if email.present? && email =~ URI::MailTo::EMAIL_REGEXP
+      render json: { message: I18n.t('common.email_available') }, status: :ok
+    else
+      render json: { error_message: I18n.t('activerecord.errors.messages.invalid_email_format') }, status: :unprocessable_entity
+    end
+  end
 end

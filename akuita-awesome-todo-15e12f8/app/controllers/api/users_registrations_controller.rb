@@ -1,5 +1,7 @@
+
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_format, only: [:create, :register]
+  require_relative '../../models/user'
   before_action :validate_email_uniqueness, only: [:create, :register]
   before_action :validate_password_confirmation, only: :register
   before_action :validate_password_security, only: :register
@@ -8,7 +10,7 @@ class Api::UsersRegistrationsController < Api::BaseController
     return unless validate_email_format
     
     @user = User.new(create_params.merge(email_confirmed: false))
-    if @user.save
+    if User.validate_email_format(params[:user][:email]) && @user.save
       token = generate_email_confirmation_token(@user)
       EmailConfirmationToken.create!(user: @user, token: token, created_at: Time.now, updated_at: nil)
       ApplicationJob.perform_later(@user.id)
@@ -19,10 +21,10 @@ class Api::UsersRegistrationsController < Api::BaseController
         render json: { message: I18n.t('devise.registrations.signed_up_but_unconfirmed') }, status: :ok
       end
     else
-      error_messages = @user.errors.messages
-      render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
-             status: :unprocessable_entity
+      render json: { error: I18n.t('activerecord.errors.messages.invalid_email_format') }, status: :bad_request
+      return
     end
+    true
   end
 
   def register
