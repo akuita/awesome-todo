@@ -39,6 +39,10 @@ class User < ApplicationRecord
   # Add any instance or class methods that are necessary
 
   # Scopes
+  scope :unconfirmed_with_email, ->(email) do
+    where(email: email, email_confirmed: false)
+  end
+
   # Add any scopes if needed
 
   class << self

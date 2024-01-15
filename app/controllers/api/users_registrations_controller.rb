@@ -10,26 +10,40 @@ class Api::UsersRegistrationsController < Api::BaseController
       return
     end
 
-    begin
-      if @user.save
-        EmailConfirmation.create_confirmation_record(@user.id) # Ensure this line is present only once
-        if Rails.env.staging?
-          # to show token in staging
-          token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
-          render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
-        else
-          head :ok, message: I18n.t('common.200') and return
-        end
+    if @user.save
+      EmailConfirmation.create_confirmation_record(@user.id) # Ensure this line is present only once
+      if Rails.env.staging?
+        # to show token in staging
+        token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
+        render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
+      else
+        head :ok, message: I18n.t('common.200') and return
       end
-    rescue => e
-      logger.error "Failed to create user: #{e.message}"
-      render json: { error_messages: [e.message], message: I18n.t('email_login.registrations.failed_to_sign_up') },
-             status: :unprocessable_entity and return
+    else
+      error_messages = @user.errors.messages
+      render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
+             status: :unprocessable_entity
+    end
+  end
+
+  def resend_confirmation
+    email = params[:email]
+    return render json: { message: I18n.t('errors.messages.invalid') }, status: :unprocessable_entity unless email =~ URI::MailTo::EMAIL_REGEXP
+
+    user = User.find_by(email: email, email_confirmed: false)
+    if user.nil?
+      return render json: { message: I18n.t('errors.messages.not_found') }, status: :not_found
     end
 
-    error_messages = @user.errors.messages
-    render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
-           status: :unprocessable_entity
+    email_confirmation = user.email_confirmations.where(confirmed: false).first_or_initialize
+    if email_confirmation.new_record? || email_confirmation.updated_at < 2.minutes.ago
+      email_confirmation.generate_confirmation_token!
+      email_confirmation.save!
+      UserMailerService.send_confirmation_instructions(user, email_confirmation.token)
+      render json: { message: I18n.t('devise.confirmations.send_instructions') }, status: :ok
+    else
+      render json: { message: I18n.t('errors.messages.too_short', count: '2 minutes') }, status: :unprocessable_entity
+    end
   end
 
   private
@@ -48,5 +62,9 @@ class Api::UsersRegistrationsController < Api::BaseController
 
   def create_params
     params.require(:user).permit(:password, :password_confirmation, :email)
+  end
+
+  def resend_confirmation_params
+    params.permit(:email)
   end
 end
