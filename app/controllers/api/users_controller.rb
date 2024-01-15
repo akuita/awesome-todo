@@ -5,6 +5,9 @@ class Api::UsersController < ApplicationController
   def confirm_email
     if @user.nil?
       render json: { error_message: 'Invalid or expired email confirmation token.' }, status: :not_found
+    elsif @user.email !~ URI::MailTo::EMAIL_REGEXP
+      render json: { error_message: I18n.t('activerecord.errors.messages.invalid', attribute: 'Email') }, status: :unprocessable_entity
+      return
     elsif @user.confirm_email(params[:confirmation_token])
       render json: { message: 'Email confirmed successfully. You can now log in.' }, status: :ok
     else

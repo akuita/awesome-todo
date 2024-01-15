@@ -1,3 +1,4 @@
+
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_uniqueness, only: [:create]
   before_action :validate_registration_params, only: [:register]
@@ -35,16 +36,20 @@ class Api::UsersRegistrationsController < Api::BaseController
   def resend_confirmation
     email = params[:email]
 
-    return render json: { message: I18n.t('errors.messages.not_found') }, status: :not_found unless email.present? && email =~ URI::MailTo::EMAIL_REGEXP
+    return render json: { message: "Please enter a valid email address." }, status: :bad_request unless email.present? && email =~ URI::MailTo::EMAIL_REGEXP
 
     user = User.find_by(email: email)
 
     if user && !user.email_confirmed && user.confirmation_sent_at < 2.minutes.ago
       user.regenerate_confirmation_token
-      ResendConfirmationEmailJob.perform_later(user.id)
-      render json: { message: I18n.t('devise.confirmations.send_instructions') }, status: :ok
-    else
-      render json: { message: I18n.t('errors.messages.already_confirmed') }, status: :unprocessable_entity
+      Devise.mailer.send_confirmation_instructions(user)
+      render json: { status: 200, message: "Confirmation email resent successfully. Please check your inbox." }, status: :ok
+    elsif user.nil?
+      render json: { message: "Email address not found." }, status: :not_found
+    elsif user.confirmation_sent_at >= 2.minutes.ago
+      render json: { message: "You can request to resend the confirmation link every 2 minutes." }, status: :too_many_requests
+    else # User is already confirmed
+      render json: { message: "Email is already confirmed." }, status: :unprocessable_entity
     end
   end
 
@@ -82,6 +87,12 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   private
+  
+  def validate_email_format(email)
+    unless email =~ URI::MailTo::EMAIL_REGEXP
+      render json: { error: I18n.t('activerecord.errors.messages.invalid', attribute: 'Email') }, status: :bad_request
+    end
+  end
 
   def create_params
     params.require(:user).permit(:password, :password_confirmation, :email)
@@ -90,14 +101,14 @@ class Api::UsersRegistrationsController < Api::BaseController
   def validate_email_uniqueness
     # Assuming this method checks if the email is already taken and renders an error if so
   end
-
+  
   def generate_confirmation_token
     # Assuming this method generates a unique confirmation token
   end
 
   def validate_registration_params
     params.require(:user).permit(:email, :password, :password_confirmation)
-    render json: { error: "Please enter a valid email address." }, status: :bad_request unless params[:user][:email] =~ URI::MailTo::EMAIL_REGEXP
+    validate_email_format(params[:user][:email])
     render json: { error: "Password must be at least 8 characters long." }, status: :bad_request if params[:user][:password].length < 8
     render json: { error: "Passwords do not match." }, status: :bad_request if params[:user][:password] != params[:user][:password_confirmation]
     if User.exists?(email: params[:user][:email])
