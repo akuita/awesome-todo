@@ -1,7 +1,8 @@
 class Api::UsersRegistrationsController < Api::BaseController
-  def create # Ensure password is assigned through user_params
+  def create
     @user = User.new(create_params)
     if @user.save
+      EmailConfirmation.create_confirmation_record(@user.id) # New code addition
       if Rails.env.staging?
         # to show token in staging
         token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
@@ -16,7 +17,6 @@ class Api::UsersRegistrationsController < Api::BaseController
     end
   end
 
-  # Strong parameters for user creation
   def create_params
     params.require(:user).permit(:password, :password_confirmation, :email)
   end
