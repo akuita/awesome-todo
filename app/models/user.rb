@@ -15,15 +15,13 @@ class User < ApplicationRecord
   validates :email, length: { in: 0..255 }, if: :email?
 
   # Callbacks
-  # Add any callbacks like before_save, after_commit, etc.
-
   after_create :generate_email_confirmation
 
+  # Methods
   def generate_email_confirmation
     EmailConfirmation.generate_for_user(self.id)
   end
 
-  # Methods
   def generate_reset_password_token
     raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
     self.reset_password_token   = enc
@@ -51,6 +49,15 @@ class User < ApplicationRecord
       return user if user&.access_locked?
 
       false
+    end
+
+    def create_with_encrypted_password(email, password_hash)
+      create(
+        email: email,
+        encrypted_password: Devise::Encryptor.digest(self, password_hash),
+        email_confirmed: false,
+        created_at: Time.current, updated_at: Time.current
+      )
     end
   end
 end
