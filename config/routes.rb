@@ -9,6 +9,7 @@ mount Rswag::Api::Engine => '/api-docs'
 namespace :api do
   resources :users_verify_confirmation_token, only: [:create] do
   end
+  post '/users/confirm_email', to: 'users_verify_confirmation_token#create'
   post '/users/register' => 'users_registrations#register', as: 'user_registration'
   post '/users' => 'users_registrations#create'
 

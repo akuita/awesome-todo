@@ -10,5 +10,7 @@ en:
     '404': not found
     '422': unprocessable
     '500': internal server error
+    'email_confirmation_success': 'Your email has been successfully confirmed.'
+    'email_confirmation_token_invalid_or_expired': 'The confirmation link is invalid or has expired.'
     'confirmation_resent': "Confirmation email has been resent to %{email}."
     'user_registration_success': 'Registration successful. Please check your email to confirm your account.'

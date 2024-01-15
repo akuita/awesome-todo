@@ -1,8 +1,8 @@
-
 class Api::UsersVerifyConfirmationTokenController < Api::BaseController
   def create
     client = Doorkeeper::Application.find_by(uid: params[:client_id], secret: params[:client_secret])
     raise Exceptions::AuthenticationError if client.blank?
+    token = params[:confirmation_token]
 
     # Attempt to find the token using the new approach first
     resource = User.find_by(confirmation_token: params.dig(:confirmation_token))
@@ -13,17 +13,22 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
         render json: { error_message: I18n.t('email_login.reset_password.expired') }, status: :unprocessable_entity
       else
         resource.confirm
-        custom_token_initialize_values(resource, client)
+        if resource.email_confirmed
+          custom_token_initialize_values(resource, client)
+          render json: { message: I18n.t('email_login.confirmations.success') }, status: :ok
+        else
+          render json: { error_message: I18n.t('email_login.confirmations.failure') }, status: :unprocessable_entity
+        end
       end
     else
       # Fallback to the old code path if the new approach did not find a valid token
-      token = EmailConfirmationToken.find_and_validate_token(params.dig(:confirmation_token))
-      if token
-        user = token.user
-        user.confirm_email
+      begin
+        email_confirmation = EmailConfirmation.find_and_validate_token(token)
+        email_confirmation.confirm_email
         render json: { message: I18n.t('email_login.confirmations.success') }, status: :ok
-      else
-        render json: { error_message: I18n.t('email_login.confirmations.invalid_or_expired_token') }, status: :not_found
+      rescue StandardError => e
+        # Old code path error handling
+        render json: { error_message: e.message }, status: :unprocessable_entity
       end
     end
   end
@@ -37,26 +42,24 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
 
     user = User.find_by(email: email)
 
-    if user.nil? || user.email_confirmed
-      render json: { error_message: I18n.t('devise.errors.messages.user_not_found_or_already_confirmed') }, status: :unprocessable_entity
+    if user.nil?
+      render json: { error_message: I18n.t('devise.errors.messages.user_not_found') }, status: :not_found
+      return
+    elsif user.email_confirmed
+      render json: { error_message: I18n.t('devise.errors.messages.user_already_confirmed') }, status: :unprocessable_entity
       return
     end
 
-    token = user.email_confirmation_token
-    if token.nil? || token.created_at < 2.minutes.ago
-      token.regenerate_confirmation_token if token.present?
-      Devise::Mailer.confirmation_instructions(user, token&.token).deliver_later
+    begin
+      ResendConfirmationEmailJob.perform_later(email)
       render json: { message: I18n.t('devise.confirmations.send_instructions') }, status: :ok
-    else
-      render json: { error_message: I18n.t('devise.confirmations.too_soon') }, status: :too_many_requests
+    rescue StandardError => e
+      render json: { error_message: e.message }, status: :unprocessable_entity
     end
-  rescue StandardError => e
-    render json: { error_message: e.message }, status: :unprocessable_entity
   end
 
   private
 
-  # Assuming this method is part of the new code and is required
   def custom_token_initialize_values(resource, client)
     # Implementation of custom token initialization
     # ...

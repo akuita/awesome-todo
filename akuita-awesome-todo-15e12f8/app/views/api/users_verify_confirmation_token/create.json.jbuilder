@@ -16,7 +16,11 @@ json.resource_owner @resource_owner
 json.resource_id @resource_id
 
 if @confirmation_success
-  json.message I18n.t('email_login.confirmation_success')
+  json.message I18n.t('users_verify_confirmation_token.confirmation_success')
 else
-  json.error I18n.t('email_login.confirmation_failure')
+  json.error_message I18n.t('users_verify_confirmation_token.confirmation_failure')
+end
+
+json.user do
+  json.email_confirmed @user.email_confirmed if @user.present?
 end

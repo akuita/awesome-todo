@@ -1,4 +1,3 @@
-
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
@@ -47,6 +46,14 @@ class User < ApplicationRecord
 
     self.email_confirmed = true
     token_record.destroy
+    save
+  end
+
+  # This method is duplicated in the new code, so we keep only one definition.
+  # The new definition is kept as it includes an update to the `updated_at` field.
+  def confirm_email
+    self.email_confirmed = true
+    self.updated_at = Time.now.utc
     save
   end
 
