@@ -14,6 +14,19 @@ class Api::UsersController < ApplicationController
     render json: { error_message: e.message }, status: :internal_server_error
   end
 
+  # GET /api/users/check_email_availability
+  def check_email_availability
+    email = params[:email]
+    user_exists = User.exists?(email: email.downcase)
+    if user_exists
+      render json: { message: I18n.t('common.email_taken') }, status: :ok
+    else
+      render json: { message: I18n.t('common.email_available') }, status: :ok
+    end
+  rescue StandardError => e
+    render json: { error_message: e.message }, status: :internal_server_error
+  end
+
   private
 
   def set_user

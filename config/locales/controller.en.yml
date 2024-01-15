@@ -1,6 +1,8 @@
 en:
   common:
     '200': success
+    'email_taken': 'The email address has already been taken.'
+    'email_available': 'The email address is available.'
     '201': created
     '302': deleted
     '401': unauthorized
