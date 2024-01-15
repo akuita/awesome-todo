@@ -1,7 +1,6 @@
-
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_email_format, only: [:create, :register]
-  require_relative '../../models/user'
+  skip_before_action :validate_email_uniqueness, only: :check_email_availability, raise: false
   before_action :validate_email_uniqueness, only: [:create, :register]
   before_action :validate_password_confirmation, only: :register
   before_action :validate_password_security, only: :register
@@ -10,7 +9,7 @@ class Api::UsersRegistrationsController < Api::BaseController
     return unless validate_email_format
     
     @user = User.new(create_params.merge(email_confirmed: false))
-    if User.validate_email_format(params[:user][:email]) && @user.save
+    if @user.save
       token = generate_email_confirmation_token(@user)
       EmailConfirmationToken.create!(user: @user, token: token, created_at: Time.now, updated_at: nil)
       ApplicationJob.perform_later(@user.id)
@@ -21,10 +20,10 @@ class Api::UsersRegistrationsController < Api::BaseController
         render json: { message: I18n.t('devise.registrations.signed_up_but_unconfirmed') }, status: :ok
       end
     else
-      render json: { error: I18n.t('activerecord.errors.messages.invalid_email_format') }, status: :bad_request
-      return
+      error_messages = @user.errors.messages
+      render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
+             status: :unprocessable_entity
     end
-    true
   end
 
   def register
@@ -70,7 +69,6 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def validate_password_security
-    # Assuming there is a method to validate password security requirements
     unless password_meets_security_requirements?(params[:user][:password])
       render json: { error: "Password does not meet security requirements." }, status: :unprocessable_entity
       return false
@@ -79,16 +77,13 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def password_meets_security_requirements?(password)
-    # Implement password security check logic here
-    # For example, a password might need to include at least one number, one lowercase letter, one uppercase letter, and be at least 8 characters long
-    # This is a placeholder implementation
     password.length >= 8 && password.match?(/\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).*\z/)
   end
 
   def generate_email_confirmation_token(user)
     loop do
       token = SecureRandom.hex(10)
-      break token unless EmailConfirmation.exists?(token: token)
+      break token unless EmailConfirmationToken.exists?(token: token)
     end
   end
 

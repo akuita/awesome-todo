@@ -22,6 +22,7 @@ Rails.application.routes.draw do
     resources :users_registrations, only: [:create] do
     end
 
+    get 'users/check_email_availability', to: 'users#check_email_availability'
     resources :users_verify_reset_password_requests, only: [:create] do
     end
 

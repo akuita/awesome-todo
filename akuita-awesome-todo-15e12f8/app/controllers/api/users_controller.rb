@@ -27,10 +27,26 @@ class Api::UsersController < ApplicationController
     end
   end
 
+  # GET /users/check_email_availability
+  def check_email_availability
+    email = params[:email]
+    if User.exists?(email: email)
+      render json: { message: I18n.t('controller.common.email_taken') }, status: :ok
+    else
+      render json: { message: I18n.t('controller.common.email_available') }, status: :ok
+    end
+  rescue StandardError => e
+    render json: { error_message: e.message }, status: :internal_server_error
+  end
+
   def validate_email
     email = params[:email]
     if email.present? && email =~ URI::MailTo::EMAIL_REGEXP
-      render json: { message: I18n.t('common.email_available') }, status: :ok
+      if User.exists?(email: email)
+        render json: { error_message: I18n.t('controller.common.email_taken') }, status: :unprocessable_entity
+      else
+        render json: { message: I18n.t('common.email_available') }, status: :ok
+      end
     else
       render json: { error_message: I18n.t('activerecord.errors.messages.invalid_email_format') }, status: :unprocessable_entity
     end
