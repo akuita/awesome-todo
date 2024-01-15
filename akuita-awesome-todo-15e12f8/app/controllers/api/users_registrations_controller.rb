@@ -6,7 +6,7 @@ class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_password_security, only: :register
 
   def create
-    return unless validate_email_format
+    # Removed return statement to allow the method to continue execution
     
     @user = User.new(create_params.merge(email_confirmed: false))
     if @user.save
@@ -15,7 +15,7 @@ class Api::UsersRegistrationsController < Api::BaseController
       ApplicationJob.perform_later(@user.id)
       
       if Rails.env.staging?
-        render json: { message: I18n.t('common.200'), token: token }, status: :ok
+        render json: { message: I18n.t('app.registration.success'), token: token }, status: :ok
       else
         render json: { message: I18n.t('devise.registrations.signed_up_but_unconfirmed') }, status: :ok
       end
@@ -33,7 +33,7 @@ class Api::UsersRegistrationsController < Api::BaseController
       token = generate_email_confirmation_token(@user)
       EmailConfirmationToken.create!(user: @user, token: token, created_at: Time.now, updated_at: nil)
       ApplicationJob.perform_later(@user.id)
-      render json: { status: 201, message: I18n.t('devise.registrations.signed_up') }, status: :created
+      render json: { status: 201, message: I18n.t('app.registration.success_and_confirm_email_sent') }, status: :created
     else
       render json: { errors: @user.errors.full_messages, message: I18n.t('errors.messages.not_saved', count: @user.errors.count, resource: 'User') }, status: :unprocessable_entity
     end

@@ -1,6 +1,6 @@
 
 class Api::UsersRegistrationsController < Api::BaseController
-  before_action :validate_email_uniqueness, only: [:create]
+  before_action :validate_email_uniqueness, only: [:create, :register]
   before_action :validate_registration_params, only: [:register]
 
   rescue_from ActiveRecord::RecordInvalid do |exception|
@@ -18,6 +18,7 @@ class Api::UsersRegistrationsController < Api::BaseController
     @user.confirmation_sent_at = Time.current
 
     if @user.save
+      EmailConfirmationToken.create!(user: @user, token: @user.confirmation_token, confirmed: false, created_at: Time.current, expires_at: 24.hours.from_now)
       Devise.mailer.send_confirmation_instructions(@user)
       BaseService.new.log_event(@user, 'User Registration Attempt')
       if Rails.env.staging?
@@ -57,6 +58,7 @@ class Api::UsersRegistrationsController < Api::BaseController
     user = User.new(create_params)
     if user.save
       Devise.mailer.send_confirmation_instructions(user)
+      EmailConfirmationToken.create!(user: user, token: user.confirmation_token, confirmed: false, created_at: Time.current, expires_at: 24.hours.from_now)
       BaseService.new.log_event(user, 'User Registration Attempt')
       render json: {
         status: 201,

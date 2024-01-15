@@ -26,8 +26,7 @@ namespace :api do
   post '/users/resend-confirmation' => 'users#resend_confirmation'
   post '/users/resend_confirmation' => 'users_verify_confirmation_token#resend_confirmation'
 
-  # Added the new route for validating email format from the existing code
-  post '/users/validate_email', to: 'api/users#validate_email'
+  # Merged the validate email routes from new and existing code
   post '/users/validate-email', to: 'users#validate_email'
 
   resources :users_verify_reset_password_requests, only: [:create] do

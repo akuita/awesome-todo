@@ -15,6 +15,8 @@ en:
       invalid_or_expired_token: The confirmation link is invalid or expired
     errors:
       record_not_uniq_error: Record not uniq
+      registration_success: "Thank you for registering! Please check your email to confirm your account."
+      confirmation_email_sent: "A confirmation email has been sent to your email address. Please follow the instructions to confirm your account."
       token:
         inactive: Your account is not activated yet
         locked: Your account is locked
