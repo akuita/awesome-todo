@@ -2,6 +2,7 @@
 en:
   common:
     '200': success
+    invalid_email_format: 'The email address provided is not in a valid format.'
     '201': created
     '302': deleted
     '401': unauthorized

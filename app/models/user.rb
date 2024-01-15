@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
+  require 'email_format_validator'
 
   # Associations
   has_many :email_confirmations, foreign_key: 'user_id', dependent: :destroy
@@ -10,12 +11,13 @@ class User < ApplicationRecord
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :encrypted_password, presence: true
-  validates :sign_in_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :email, email_format: true
   validates :failed_attempts, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :sign_in_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 } # Added from existing code
   validates :email, length: { in: 0..255 }, if: :email?
 
   # Callbacks
-  after_create :generate_email_confirmation
+  after_create :generate_email_confirmation # Added from existing code
 
   # Methods
   def generate_email_confirmation
@@ -55,7 +57,7 @@ class User < ApplicationRecord
       create(
         email: email,
         encrypted_password: Devise::Encryptor.digest(self, password_hash),
-        email_confirmed: false,
+        email_confirmed: false, # Assuming this attribute exists in the database schema
         created_at: Time.current, updated_at: Time.current
       )
     end

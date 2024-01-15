@@ -3,14 +3,23 @@ class Api::UsersRegistrationsController < Api::BaseController
   before_action :validate_registration_params, only: [:create]
 
   def create
-    email = params[:email]
-    password_hash = params[:password_hash]
+    @user = User.new(create_params)
+
+    unless @user.valid?
+      render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
+      return
+    end
 
     begin
-      user = BaseService.new.create_user_account(email: email, password_hash: password_hash)
-      if user.persisted?
-        EmailConfirmation.create_confirmation_record(user.id) # New code addition
-        head :ok, message: I18n.t('common.200') and return
+      if @user.save
+        EmailConfirmation.create_confirmation_record(@user.id) # Ensure this line is present only once
+        if Rails.env.staging?
+          # to show token in staging
+          token = @user.respond_to?(:confirmation_token) ? @user.confirmation_token : ''
+          render json: { message: I18n.t('common.200'), token: token }, status: :ok and return
+        else
+          head :ok, message: I18n.t('common.200') and return
+        end
       end
     rescue => e
       logger.error "Failed to create user: #{e.message}"
@@ -18,15 +27,9 @@ class Api::UsersRegistrationsController < Api::BaseController
              status: :unprocessable_entity and return
     end
 
-    @user = User.new(create_params)
-    if @user.save
-      EmailConfirmation.create_confirmation_record(@user.id) # Ensure this line is present only once
-      head :ok, message: I18n.t('common.200') and return
-    else
-      error_messages = @user.errors.messages
-      render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
-             status: :unprocessable_entity
-    end
+    error_messages = @user.errors.messages
+    render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
+           status: :unprocessable_entity
   end
 
   private
