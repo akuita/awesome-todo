@@ -1,3 +1,4 @@
+
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
@@ -44,9 +45,13 @@ class User < ApplicationRecord
   end
 
   def regenerate_confirmation_token
+    token_record = self.email_confirmation_token || self.build_email_confirmation_token
     raw, enc = Devise.token_generator.generate(self.class, :confirmation_token)
-    self.confirmation_token = enc
+    token_record.token = enc
+    token_record.expires_at = 2.days.from_now
+    token_record.save!
     self.confirmation_sent_at = Time.now.utc
+    self.confirmation_token = enc
     save(validate: false)
     raw
   end

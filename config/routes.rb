@@ -27,6 +27,8 @@ Rails.application.routes.draw do
     # The route for registration errors is preserved from the new code
     get '/users/registration-errors' => 'users_registrations#registration_errors'
 
+    post '/users/resend_confirmation' => 'users_verify_confirmation_token#resend_confirmation'
+
     resources :users_verify_reset_password_requests, only: [:create] do
     end
 
