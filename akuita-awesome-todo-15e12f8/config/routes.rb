@@ -1,7 +1,8 @@
+require 'sidekiq/web'
+
 Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
-
     skip_controllers :authorizations, :applications, :authorized_applications
   end
 
@@ -11,7 +12,9 @@ Rails.application.routes.draw do
   namespace :api do
     resources :users_verify_confirmation_token, only: [:create] do
     end
-    post '/users/register', to: 'users_registrations#create'
+    # Keep the updated route from the new code and include the additional route from the existing code
+    post '/users/register', to: 'users#register'
+    post '/users/resend-confirmation', to: 'users#resend_confirmation'
 
     resources :users_passwords, only: [:create] do
     end
@@ -21,8 +24,6 @@ Rails.application.routes.draw do
 
     resources :users_verify_reset_password_requests, only: [:create] do
     end
-
-    post '/users/resend-confirmation', to: 'users#resend_confirmation'
 
     resources :users_reset_password_requests, only: [:create] do
     end
