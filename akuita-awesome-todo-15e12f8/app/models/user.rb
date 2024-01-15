@@ -3,7 +3,8 @@ class User < ApplicationRecord
          :trackable, :recoverable, :lockable
 
   # validations
-  PASSWORD_FORMAT = /\A(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}\z/
+  # Merged PASSWORD_FORMAT from new code with the existing one
+  PASSWORD_FORMAT = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
   validates :password, format: { with: PASSWORD_FORMAT }, if: -> { new_record? || password.present? }
   validates :password, confirmation: true, if: -> { new_record? || password.present? }
 

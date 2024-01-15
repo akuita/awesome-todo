@@ -1,4 +1,3 @@
-
 class EmailConfirmationToken < ApplicationRecord
   # validations
   validates :token, presence: true
@@ -11,8 +10,16 @@ class EmailConfirmationToken < ApplicationRecord
   # end for validations
 
   class << self
+    def generate_unique_confirmation_token
+      loop do
+        token = SecureRandom.hex(10)
+        break token unless EmailConfirmationToken.exists?(token: token)
+      end
+    end
+
     def find_and_validate_token(token)
       find_by(token: token, 'expires_at > ?', Time.current)
     end
   end
+
 end
