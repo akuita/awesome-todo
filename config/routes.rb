@@ -23,11 +23,9 @@ namespace :api do
   get '/users/confirm-email/:confirmation_token' => 'users#confirm_email', as: 'user_email_confirmation'
   get '/users/registration-errors' => 'users_registrations#registration_errors'
 
-  # Merged the resend confirmation routes from new and existing code
   post '/users/resend-confirmation' => 'users#resend_confirmation'
   post '/users/resend_confirmation' => 'users_verify_confirmation_token#resend_confirmation'
 
-  # Merged the validate email routes from new and existing code
   post '/users/validate-email', to: 'users#validate_email'
 
   resources :users_verify_reset_password_requests, only: [:create] do
