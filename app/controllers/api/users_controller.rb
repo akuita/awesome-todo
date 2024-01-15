@@ -27,22 +27,32 @@ class Api::UsersController < ApplicationController
 
   # POST /api/users/resend_confirmation
   def resend_confirmation
-    user = User.find_by(email: params[:email])
-    if user && !user.email_confirmed
-      email_confirmation = user.email_confirmation_token || user.email_confirmations.last
-      if email_confirmation && email_confirmation.updated_at < 2.minutes.ago
-        user.regenerate_confirmation_token
-        email_confirmation.update(token: user.confirmation_token, created_at: Time.now.utc, expires_at: 15.minutes.from_now)
-        ResendConfirmationEmailJob.perform_later(user.id)
-        render json: { message: 'Confirmation email has been resent.' }, status: :ok
-      elsif email_confirmation.nil? || email_confirmation.created_at < 2.minutes.ago
-        ResendConfirmationEmailJob.perform_later(user.email)
-        render json: { message: I18n.t('common.confirmation_resent', email: user.email) }, status: :ok
-      else
-        render json: { error_message: I18n.t('devise.errors.messages.too_soon') }, status: :unprocessable_entity
-      end
+    email = params[:email].to_s.downcase
+
+    if email.blank?
+      render json: { error_message: "Email parameter is missing." }, status: :bad_request
+    elsif email !~ URI::MailTo::EMAIL_REGEXP
+      render json: { error_message: "Enter a valid email address." }, status: :bad_request
     else
-      render json: { error_message: 'Email not found or already confirmed.' }, status: :not_found
+      user = User.find_by(email: email)
+      if user.nil?
+        render json: { error_message: "No account found with this email address." }, status: :not_found
+      elsif user.email_confirmed
+        render json: { error_message: 'Email already confirmed.' }, status: :unprocessable_entity
+      else
+        email_confirmation = user.email_confirmation_token || user.email_confirmations.last
+        if email_confirmation && email_confirmation.updated_at < 2.minutes.ago
+          user.regenerate_confirmation_token
+          email_confirmation.update(token: user.confirmation_token, created_at: Time.now.utc, expires_at: 15.minutes.from_now)
+          ResendConfirmationEmailJob.perform_later(user.id)
+          render json: { message: 'Confirmation email resent successfully.' }, status: :ok
+        elsif email_confirmation.nil? || email_confirmation.created_at < 2.minutes.ago
+          ResendConfirmationEmailJob.perform_later(user.email)
+          render json: { message: I18n.t('common.confirmation_resent', email: user.email) }, status: :ok
+        else
+          render json: { error_message: I18n.t('devise.errors.messages.too_soon') }, status: :unprocessable_entity
+        end
+      end
     end
   rescue StandardError => e
     render json: { error_message: e.message }, status: :internal_server_error
@@ -68,10 +78,10 @@ class Api::UsersController < ApplicationController
   # POST /api/users/validate-email
   def validate_email
     email = params[:email]
-    if email.blank?
-      render json: { status: 400, error: "Email parameter is missing." }, status: :bad_request
-    elsif email =~ URI::MailTo::EMAIL_REGEXP
+    if email.present? && email =~ URI::MailTo::EMAIL_REGEXP
       render json: { status: 200, valid: true }, status: :ok
+    elsif email.blank?
+      render json: { status: 400, error: "Email parameter is missing." }, status: :bad_request
     else
       render json: { status: 422, error: "Enter a valid email address." }, status: :unprocessable_entity
     end
