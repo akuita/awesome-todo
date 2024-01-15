@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
+  # Devise is configured to use bcrypt as the encryptor in the initializer
 
   # Associations
   has_many :email_confirmations, foreign_key: 'user_id', dependent: :destroy
