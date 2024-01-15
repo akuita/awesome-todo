@@ -51,7 +51,9 @@ class Api::UsersController < ApplicationController
   def check_email_availability
     email = params[:email].to_s.downcase
 
-    if email !~ URI::MailTo::EMAIL_REGEXP
+    if email.blank?
+      render json: { error: 'Email parameter is missing.' }, status: :bad_request
+    elsif email !~ URI::MailTo::EMAIL_REGEXP
       render json: { error: 'Enter a valid email address.' }, status: :bad_request
     elsif User.exists?(email: email)
       render json: { error: 'Email is already taken.' }, status: :conflict
