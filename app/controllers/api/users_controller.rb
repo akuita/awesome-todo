@@ -1,4 +1,5 @@
 class Api::UsersController < ApplicationController
+  before_action :doorkeeper_authorize!, except: [:check_email_availability, :confirm_email, :resend_confirmation, :validate_email]
   before_action :set_user, only: [:confirm_email]
 
   # GET /api/users/confirm_email/:confirmation_token
@@ -67,10 +68,10 @@ class Api::UsersController < ApplicationController
   # POST /api/users/validate-email
   def validate_email
     email = params[:email]
-    if email.present? && email =~ URI::MailTo::EMAIL_REGEXP
-      render json: { status: 200, valid: true }, status: :ok
-    elsif email.blank?
+    if email.blank?
       render json: { status: 400, error: "Email parameter is missing." }, status: :bad_request
+    elsif email =~ URI::MailTo::EMAIL_REGEXP
+      render json: { status: 200, valid: true }, status: :ok
     else
       render json: { status: 422, error: "Enter a valid email address." }, status: :unprocessable_entity
     end
@@ -82,5 +83,9 @@ class Api::UsersController < ApplicationController
 
   def set_user
     @user = User.find_by(confirmation_token: params[:confirmation_token])
+  end
+
+  def error_response(message, status)
+    render json: { error: message }, status: status
   end
 end
