@@ -7,5 +7,5 @@ p
   = t('.instruction_2')
 
 p
-  a> href="#{Rails.application.credentials.dig(:frontend_base_url)}/users/confirmations?confirmation_token=#{@resource.confirmation_token}" #{t('.action')}
+  a> href="#{Rails.application.credentials.dig(:frontend_base_url)}/confirmation?confirmation_token=#{@resource.confirmation_token}" #{t('.action')}
 br

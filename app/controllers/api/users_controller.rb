@@ -1,3 +1,4 @@
+
 class Api::UsersController < ApplicationController
   before_action :set_user, only: [:confirm_email]
 
@@ -21,14 +22,12 @@ class Api::UsersController < ApplicationController
   def resend_confirmation
     user = User.find_by(email: params[:email])
     if user && !user.email_confirmed
-      email_confirmation = user.email_confirmation_token
-      if email_confirmation && email_confirmation.updated_at < 2.minutes.ago
-        user.regenerate_confirmation_token
-        email_confirmation.update(token: user.confirmation_token, created_at: Time.now.utc, expires_at: 15.minutes.from_now)
-        ResendConfirmationEmailJob.perform_later(user.id)
-        render json: { message: 'Confirmation email has been resent.' }, status: :ok
+      email_confirmation = user.email_confirmations.last
+      if email_confirmation.nil? || email_confirmation.created_at < 2.minutes.ago
+        ResendConfirmationEmailJob.perform_later(user.email)
+        render json: { message: I18n.t('common.confirmation_resent', email: user.email) }, status: :ok
       else
-        render json: { error_message: I18n.t('devise.errors.messages.too_soon') }, status: :unprocessable_entity
+        render json: { error_message: I18n.t('errors.messages.too_soon') }, status: :too_many_requests
       end
     else
       render json: { error_message: 'Email not found or already confirmed.' }, status: :not_found

@@ -1,3 +1,4 @@
+
 class Api::UsersVerifyConfirmationTokenController < Api::BaseController
   def create
     client = Doorkeeper::Application.find_by(uid: params[:client_id], secret: params[:client_secret])
@@ -36,17 +37,21 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
 
     user = User.find_by(email: email)
 
-    if user.nil?
-      render json: { error_message: I18n.t('devise.errors.messages.user_not_found') }, status: :not_found
+    if user.nil? || user.email_confirmed
+      render json: { error_message: I18n.t('devise.errors.messages.user_not_found_or_already_confirmed') }, status: :unprocessable_entity
       return
     end
 
-    begin
-      ResendConfirmationEmailJob.perform_later(email)
+    token = user.email_confirmation_token
+    if token.nil? || token.created_at < 2.minutes.ago
+      token.regenerate_confirmation_token if token.present?
+      Devise::Mailer.confirmation_instructions(user, token&.token).deliver_later
       render json: { message: I18n.t('devise.confirmations.send_instructions') }, status: :ok
-    rescue StandardError => e
-      render json: { error_message: e.message }, status: :unprocessable_entity
+    else
+      render json: { error_message: I18n.t('devise.confirmations.too_soon') }, status: :too_many_requests
     end
+  rescue StandardError => e
+    render json: { error_message: e.message }, status: :unprocessable_entity
   end
 
   private

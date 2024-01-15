@@ -10,10 +10,6 @@ class EmailConfirmationToken < ApplicationRecord
   # end for validations
 
   class << self
-    def set_expiration
-      24.hours.from_now
-    end
-
     def generate_unique_confirmation_token
       loop do
         token = SecureRandom.hex(10)
@@ -21,10 +17,21 @@ class EmailConfirmationToken < ApplicationRecord
       end
     end
 
+    def set_expiration
+      24.hours.from_now
+    end
+
     def find_and_validate_token(token)
       find_by(token: token, 'expires_at > ?', Time.current)
       # Ensure the token is not expired
     end
+  end
+
+  def regenerate_confirmation_token
+    self.token = self.class.generate_unique_confirmation_token
+    self.created_at = Time.current
+    self.expires_at = self.class.set_expiration
+    save!
   end
 
 end
