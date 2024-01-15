@@ -11,10 +11,10 @@ class User < ApplicationRecord
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :encrypted_password, presence: true
-  validates :email, email_format: true
+  validates :sign_in_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :failed_attempts, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-  validates :sign_in_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 } # Added from existing code
   validates :email, length: { in: 0..255 }, if: :email?
+  validates :email, email_format: true # Added from existing code
 
   # Callbacks
   after_create :generate_email_confirmation # Added from existing code
@@ -30,6 +30,10 @@ class User < ApplicationRecord
     self.reset_password_sent_at = Time.now.utc
     save(validate: false)
     raw
+  end
+
+  def confirm_email
+    update(email_confirmed: true)
   end
 
   # Add any instance or class methods that are necessary

@@ -14,7 +14,8 @@ Rails.application.routes.draw do
     resources :users_verify_confirmation_token, only: [:create] do
     end
 
-    post '/users', to: 'users_registrations#create'
+    # The new code has a different route for users/verify_confirmation_token, but since it's the same action, we can ignore the new route.
+    # post 'users/verify_confirmation_token', to: 'users_verify_confirmation_token#create', as: 'verify_confirmation_token'
 
     resources :users_passwords, only: [:create] do
     end
@@ -22,7 +23,11 @@ Rails.application.routes.draw do
     resources :users_registrations, only: [:create] do
     end
 
+    # The existing code has an additional route for checking email availability, which should be preserved.
     get 'users_registrations/check_email_availability', to: 'users_registrations#check_email_availability', as: 'check_email'
+
+    # The new code does not have the post '/users', to: 'users_registrations#create' route, but we should keep it as it's part of the existing functionality.
+    post '/users', to: 'users_registrations#create'
 
     resources :users_verify_reset_password_requests, only: [:create] do
     end
