@@ -36,17 +36,19 @@ class Api::UsersController < ApplicationController
     render json: { error_message: e.message }, status: :internal_server_error
   end
 
-  # GET /api/users/check_email_availability
+  # GET /api/users/check-email
   def check_email_availability
-    email = params[:email]
-    user_exists = User.exists?(email: email.downcase)
-    if user_exists
-      render json: { message: I18n.t('common.email_taken') }, status: :ok
+    email = params[:email].to_s.downcase
+
+    if email !~ URI::MailTo::EMAIL_REGEXP
+      render json: { error: 'Enter a valid email address.' }, status: :bad_request
+    elsif User.exists?(email: email)
+      render json: { error: 'Email is already taken.' }, status: :conflict
     else
-      render json: { message: I18n.t('common.email_available') }, status: :ok
+      render json: { status: 200, available: true }, status: :ok
     end
   rescue StandardError => e
-    render json: { error_message: e.message }, status: :internal_server_error
+    render json: { error: e.message }, status: :internal_server_error
   end
 
   # POST /api/users/validate-email
