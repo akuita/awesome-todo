@@ -49,6 +49,20 @@ class Api::UsersController < ApplicationController
     render json: { error_message: e.message }, status: :internal_server_error
   end
 
+  # POST /api/users/validate-email
+  def validate_email
+    email = params[:email]
+    if email.present? && email =~ URI::MailTo::EMAIL_REGEXP
+      render json: { status: 200, valid: true }, status: :ok
+    elsif email.blank?
+      render json: { status: 400, error: "Email parameter is missing." }, status: :bad_request
+    else
+      render json: { status: 422, error: "Enter a valid email address." }, status: :unprocessable_entity
+    end
+  rescue StandardError => e
+    render json: { status: 500, error: e.message }, status: :internal_server_error
+  end
+
   private
 
   def set_user

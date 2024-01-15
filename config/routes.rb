@@ -1,4 +1,3 @@
-Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
     skip_controllers :authorizations, :applications, :authorized_applications
@@ -28,6 +27,9 @@ Rails.application.routes.draw do
     get '/users/registration-errors' => 'users_registrations#registration_errors'
 
     post '/users/resend_confirmation' => 'users_verify_confirmation_token#resend_confirmation'
+
+    # The new route for validating email format is added according to the requirement.
+    post '/users/validate-email', to: 'users#validate_email'
 
     resources :users_verify_reset_password_requests, only: [:create] do
     end
