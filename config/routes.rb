@@ -1,4 +1,3 @@
-require 'sidekiq/web'
 
 Rails.application.routes.draw do
   use_doorkeeper do
@@ -28,6 +27,9 @@ Rails.application.routes.draw do
 
     # Adding the new route for resending confirmation from the new code
     post 'users/registrations/resend_confirmation', to: 'users_registrations#resend_confirmation'
+
+    # Route for confirming email with token
+    get 'users/confirm-email/:token', to: 'users#confirm_email'
 
     resources :users_verify_reset_password_requests, only: [:create] do
     end
