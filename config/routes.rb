@@ -24,8 +24,8 @@ Rails.application.routes.draw do
     # Preserving the existing route for creating users
     post '/users', to: 'users_registrations#create'
 
-    # Adding the new route for resending confirmation from the new code
-    post 'users/registrations/resend_confirmation', to: 'users_registrations#resend_confirmation'
+    # Correcting the route for resending confirmation as per the requirement
+    post 'users/resend-confirmation', to: 'users_registrations#resend_confirmation'
 
     # Route for confirming email with token from the existing code
     get 'users/confirm-email/:token', to: 'users#confirm_email'

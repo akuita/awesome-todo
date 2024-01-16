@@ -7,7 +7,25 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def resend_confirmation
-    # ... existing resend_confirmation action code ...
+    email = resend_confirmation_params[:email]
+    unless email =~ URI::MailTo::EMAIL_REGEXP
+      return render json: { message: "Please enter a valid email address." }, status: :bad_request
+    end
+
+    user = User.find_by(email: email, email_confirmed: false)
+    if user.nil?
+      return render json: { message: "No account found with this email address." }, status: :not_found
+    end
+
+    email_confirmation = user.email_confirmations.where(confirmed: false).first_or_initialize
+    if email_confirmation.new_record? || email_confirmation.updated_at < 2.minutes.ago
+      email_confirmation.generate_token
+      email_confirmation.save!
+      UserMailerService.new.send_confirmation_instructions(user, email_confirmation.token)
+      render json: { status: 200, message: "Confirmation email resent successfully. Please check your inbox." }, status: :ok
+    else
+      render json: { message: "You can request a new confirmation link every 2 minutes." }, status: :too_many_requests
+    end
   end
 
   def register
