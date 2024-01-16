@@ -1,8 +1,16 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :check_email_availability, only: :create
-  before_action :validate_registration_params, only: [:create]
+  before_action :validate_registration_params, only: [:create, :register]
 
   def create
+    # ... existing create action code ...
+  end
+
+  def resend_confirmation
+    # ... existing resend_confirmation action code ...
+  end
+
+  def register
     @user = User.new(create_params)
 
     unless @user.valid?
@@ -13,45 +21,13 @@ class Api::UsersRegistrationsController < Api::BaseController
     if @user.save
       token = SecureRandom.hex(10)
       email_confirmation = @user.email_confirmations.create(token: token, expires_at: 24.hours.from_now)
-
-      if email_confirmation.persisted?
-        Devise::Mailer.confirmation_instructions(@user, token).deliver_later
-        message = I18n.t('devise.confirmations.send_instructions')
-        if Rails.env.staging?
-          # to show token in staging
-          render json: { message: message, token: token }, status: :ok and return
-        else
-          render json: { message: message }, status: :ok and return
-        end
-      else
-        message = I18n.t('errors.messages.not_saved', resource: 'email confirmation')
-        render json: { message: message }, status: :unprocessable_entity and return
-      end
+      UserMailerService.new.send_confirmation_instructions(@user, token)
+      render json: { status: 201, message: 'User registered successfully. Please check your email to confirm your account.' }, status: :created
     else
-      error_messages = @user.errors.full_messages
-      render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
-             status: :unprocessable_entity
+      render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
     end
-  end
-
-  def resend_confirmation
-    email = params[:email]
-    return render json: { message: I18n.t('errors.messages.invalid') }, status: :unprocessable_entity unless email =~ URI::MailTo::EMAIL_REGEXP
-
-    user = User.find_by(email: email, email_confirmed: false)
-    if user.nil?
-      return render json: { message: I18n.t('errors.messages.not_found') }, status: :not_found
-    end
-
-    email_confirmation = user.email_confirmations.where(confirmed: false).first_or_initialize
-    if email_confirmation.new_record? || email_confirmation.updated_at < 2.minutes.ago
-      email_confirmation.generate_confirmation_token!
-      email_confirmation.save!
-      UserMailerService.send_confirmation_instructions(user, email_confirmation.token)
-      render json: { message: I18n.t('devise.confirmations.send_instructions') }, status: :ok
-    else
-      render json: { message: I18n.t('errors.messages.too_short', count: '2 minutes') }, status: :unprocessable_entity
-    end
+  rescue StandardError => e
+    render json: { errors: e.message }, status: :internal_server_error
   end
 
   private
@@ -59,13 +35,23 @@ class Api::UsersRegistrationsController < Api::BaseController
   def check_email_availability
     email = params[:user][:email]
     if User.exists?(email: email)
-      render json: { message: I18n.t('common.422'), error: 'Email is already taken' }, status: :unprocessable_entity and return
+      render json: { errors: 'This email address has been used.' }, status: :conflict and return
     end
   end
 
   def validate_registration_params
-    # The original code for validation should be here, but since the patch does not provide it,
-    # we assume it's a placeholder for actual validation logic.
+    validator = EmailFormatValidator.new(attributes: [:email])
+    unless validator.validate_each(@user, :email, params[:user][:email])
+      render json: { errors: 'Please enter a valid email address.' }, status: :unprocessable_entity and return
+    end
+
+    if params[:user][:password].length < 8
+      render json: { errors: 'Password must be at least 8 characters long.' }, status: :unprocessable_entity and return
+    end
+
+    if params[:user][:password] != params[:user][:password_confirmation]
+      render json: { errors: 'Password confirmation does not match.' }, status: :unprocessable_entity and return
+    end
   end
 
   def create_params

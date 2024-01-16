@@ -1,4 +1,3 @@
-
 Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
@@ -28,8 +27,11 @@ Rails.application.routes.draw do
     # Adding the new route for resending confirmation from the new code
     post 'users/registrations/resend_confirmation', to: 'users_registrations#resend_confirmation'
 
-    # Route for confirming email with token
+    # Route for confirming email with token from the existing code
     get 'users/confirm-email/:token', to: 'users#confirm_email'
+
+    # The new route for user registration is added here as per the requirement
+    post '/users/register', to: 'users_registrations#register'
 
     resources :users_verify_reset_password_requests, only: [:create] do
     end
