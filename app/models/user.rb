@@ -4,6 +4,7 @@ class User < ApplicationRecord
 
   # Associations
   has_many :email_confirmations, foreign_key: 'user_id', dependent: :destroy
+  has_many :email_confirmation_requests, foreign_key: 'user_id', dependent: :destroy
 
   # Validations
   PASSWORD_FORMAT = //
