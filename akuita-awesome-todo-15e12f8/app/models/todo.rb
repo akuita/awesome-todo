@@ -7,10 +7,8 @@ class Todo < ApplicationRecord
   has_many :attachments, dependent: :destroy
 
   # Merged validations
-  validates_presence_of :title, message: I18n.t('activerecord.errors.messages.blank')
-  validates_uniqueness_of :title, scope: :user_id, message: I18n.t('activerecord.errors.messages.taken')
   validates :title, presence: { message: I18n.t('activerecord.errors.messages.blank') }, uniqueness: { scope: :user_id, message: I18n.t('activerecord.errors.messages.taken') }
-  validate :due_date_in_future, :due_date_conflict
+  validate :due_date_in_future, :due_date_conflict, :custom_validation
 
   # Use the new code's priority validation message
   validates :priority, inclusion: { in: priorities.keys, message: I18n.t('activerecord.errors.messages.invalid_priority') }, if: -> { priority.present? }
@@ -20,7 +18,6 @@ class Todo < ApplicationRecord
   validate :user_exists
 
   def self.due_date_conflict?(due_date, user_id)
-    validates_presence_of :due_date, message: I18n.t('activerecord.errors.messages.blank')
     where(user_id: user_id).where.not(due_date: nil).exists?(['due_date = ?', due_date])
   end
 
@@ -35,11 +32,19 @@ class Todo < ApplicationRecord
   
   def due_date_conflict
     if due_date.present? && self.class.due_date_conflict?(due_date, user_id)
-      errors.add(:due_date, 'This due date conflicts with another scheduled todo.')
+      errors.add(:due_date, I18n.t('activerecord.errors.messages.taken'))
     end
   end
 
   def user_exists
     errors.add(:user_id, "User not found.") unless User.exists?(self.user_id)
+  end
+
+  def custom_validation
+    unless title.present?
+      errors.add(:title, I18n.t('activerecord.errors.messages.blank'))
+    end
+
+    # Add more custom validations as needed
   end
 end

@@ -10,4 +10,9 @@ class ApplicationController < ActionController::Base
     error_message = I18n.t('controller.common.internal_server_error')
     render json: { error: error_message }, status: :internal_server_error
   end
+
+  def log_error(error)
+    Rails.logger.error "#{error.class} (#{error.message}):"
+    Rails.logger.error error.backtrace.join("\n")
+  end
 end
