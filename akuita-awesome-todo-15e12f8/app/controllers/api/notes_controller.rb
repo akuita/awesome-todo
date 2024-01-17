@@ -16,7 +16,7 @@ class Api::NotesController < Api::BaseController
     @note = Note.new(create_params)
 
     if @note.save
-      render json: { validation_status: true }, status: :created
+      render json: { validation_status: true, note: @note }, status: :created
       return
     end
 
@@ -34,11 +34,15 @@ class Api::NotesController < Api::BaseController
     @note = Note.find_by('notes.id = ?', params[:id])
     raise ActiveRecord::RecordNotFound if @note.blank?
 
-    return if @note.update(update_params)
+    if @note.update(update_params)
+      render json: { validation_status: true, note: @note }, status: :ok
+      return
+    end
 
-    @error_object = @note.errors.messages
-
-    render status: :unprocessable_entity
+    error_messages = @note.errors.full_messages.join(', ')
+    render json: { validation_status: false, error_message: error_messages },
+           status: :unprocessable_entity
+    return
   end
 
   def update_params
