@@ -3,6 +3,16 @@ class Api::TodosController < ApplicationController
   before_action :set_todo, only: [:associate_with_category]
   before_action :set_category, only: [:associate_with_category]
 
+  # POST /api/todos
+  def create
+    begin
+      # existing todo creation logic
+    rescue => e
+      Rails.logger.error "Todo creation error: #{e.message}, #{e.backtrace.join("\n")}"
+      render json: { error: I18n.t('common.todo_creation_error') }, status: :unprocessable_entity
+    end
+  end
+
   # POST /api/todos/:todo_id/associate_category/:category_id
   def associate_with_category
     todo_category = TodoCategory.new(todo: @todo, category: @category)

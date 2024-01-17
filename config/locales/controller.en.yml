@@ -10,6 +10,7 @@ en:
     '404': not found
     '422': unprocessable
     notes:
+      todo_creation_error: "An error occurred while creating the todo. Please try again later."
       title_already_exists: "Title already exists"
       due_date_in_past: "Due date can't be in the past"
     '500': internal server error

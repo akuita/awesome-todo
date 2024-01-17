@@ -10,3 +10,4 @@ en:
     '422': unprocessable
     '500': internal server error
     todo_creation_error: "An error occurred while creating the todo. Please try again later."
+    todo_creation_error: "An error occurred while creating the todo. Please try again later."
