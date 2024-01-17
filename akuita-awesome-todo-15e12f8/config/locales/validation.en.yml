@@ -11,6 +11,7 @@ en:
         datetime_in_past: must be before the date and time today
         datetime_type: must be a valid date and time
         file_content_type_invalid: has an invalid content type
+        datetime_in_future: must be in the future
         file_limit_out_of_range: total number is out of range
         file_size_out_of_range: size %{file_size} is not between required range
         file_type_not_allowed: is not an allowed file type

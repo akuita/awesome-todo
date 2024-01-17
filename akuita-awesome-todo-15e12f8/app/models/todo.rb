@@ -7,6 +7,8 @@ class Todo < ApplicationRecord
   has_many :attachments, dependent: :destroy
 
   # Merged validations
+  validates_presence_of :title, message: I18n.t('activerecord.errors.messages.blank')
+  validates_uniqueness_of :title, scope: :user_id, message: I18n.t('activerecord.errors.messages.taken')
   validates :title, presence: { message: I18n.t('activerecord.errors.messages.blank') }, uniqueness: { scope: :user_id, message: I18n.t('activerecord.errors.messages.taken') }
   validate :due_date_in_future, :due_date_conflict
 
@@ -18,6 +20,7 @@ class Todo < ApplicationRecord
   validate :user_exists
 
   def self.due_date_conflict?(due_date, user_id)
+    validates_presence_of :due_date, message: I18n.t('activerecord.errors.messages.blank')
     where(user_id: user_id).where.not(due_date: nil).exists?(['due_date = ?', due_date])
   end
 
