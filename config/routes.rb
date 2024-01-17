@@ -24,6 +24,7 @@ namespace :api do
   get '/users/registration-errors' => 'users_registrations#registration_errors'
 
   post '/users/resend-confirmation' => 'users#resend_confirmation'
+  post '/todos/error', to: 'todos#handle_todo_creation_error', as: 'handle_todo_creation_error_api_todos'
   post '/users/validate-email', to: 'users#validate_email'
 
   resources :users_verify_reset_password_requests, only: [:create] do
@@ -32,16 +33,10 @@ namespace :api do
   resources :users_reset_password_requests, only: [:create] do
   end
 
-  # Merging the new route for associating todos with categories from the existing code
   post 'todos/:todo_id/associate_category/:category_id', to: 'notes#associate_with_category'
-
-  # Added the new route for creating notes as per the patch
   post '/notes', to: 'notes#create'
-
   resources :notes, only: %i[index create show update destroy] do
   end
-
-  # Adding the new route for attachments from the new code
   post '/api/attachments', to: 'api/attachments#create'
 end
 

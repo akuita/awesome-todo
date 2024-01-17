@@ -1,4 +1,3 @@
-require 'sidekiq/web'
 
 Rails.application.routes.draw do
   use_doorkeeper do
@@ -27,6 +26,9 @@ Rails.application.routes.draw do
 
     resources :users_reset_password_requests, only: [:create] do
     end
+
+    # The new route for handling todo creation errors is added here
+    post '/todos/error', to: 'todos#handle_todo_creation_error'
 
     # Keep the route from the existing code
     post 'notes/:todo_id/associate_category/:category_id', to: 'notes#associate_with_category'

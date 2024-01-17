@@ -1,5 +1,9 @@
-class Api::TodosController < ApplicationController
+
+class Api::TodosController < Api::BaseController
   before_action :authenticate_user!
+  before_action :doorkeeper_authorize!, only: [:associate_with_category]
+  before_action :set_todo, only: [:associate_with_category]
+  before_action :set_category, only: [:associate_with_category]
 
   def create
     todo = Todo.new(todo_params)
@@ -20,6 +24,30 @@ class Api::TodosController < ApplicationController
   end
 
   private
+
+  def handle_todo_creation_error
+    error_param = error_params[:error]
+    if error_param.blank?
+      render json: { error: 'Error details are required.' }, status: :bad_request
+    else
+      Rails.logger.error("Todo Creation Error: #{error_param}")
+      render json: { message: 'Error has been logged and will be reviewed by the technical team.' }, status: :ok
+    end
+  rescue StandardError => e
+    render json: { error: 'An unexpected error occurred.' }, status: :internal_server_error
+  end
+
+  def error_params
+    params.permit(:error)
+  end
+
+  def set_todo
+    @todo = Todo.find(params[:todo_id])
+  end
+
+  def set_category
+    @category = Category.find(params[:category_id])
+  end
 
   def todo_params
     params.require(:todo).permit(:title, :description, :due_date, :priority, :recurring, :user_id, :category_id)
