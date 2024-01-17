@@ -12,7 +12,7 @@ class User < ApplicationRecord
   validates :password, presence: true, confirmation: true, length: { minimum: 6 }, if: -> { new_record? || password.present? }
   validates :password_confirmation, presence: true, if: -> { new_record? || password.present? }
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :email, email_format: true
+  validates :email, email_format: { with: EmailFormatValidator }, if: :email_changed?
   validates :encrypted_password, presence: true
   validates :sign_in_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :failed_attempts, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
@@ -22,6 +22,11 @@ class User < ApplicationRecord
   after_create :generate_email_confirmation
 
   # Methods
+  def password=(new_password)
+    self.encrypted_password = Devise::Encryptor.digest(self.class, new_password) if new_password.present?
+  end
+
+  validate :password_confirmation_match, if: -> { new_record? || password.present? }
   def generate_email_confirmation
     EmailConfirmation.generate_for_user(self.id)
   end
@@ -63,6 +68,8 @@ class User < ApplicationRecord
     where(email: email, email_confirmed: false)
   end
 
+  # Add any scopes if needed
+
   class << self
     def authenticate?(email, password)
       user = User.find_for_authentication(email: email)
@@ -87,5 +94,11 @@ class User < ApplicationRecord
         created_at: Time.current, updated_at: Time.current
       )
     end
+  end
+
+  private
+
+  def password_confirmation_match
+    errors.add(:password_confirmation, "doesn't match Password") unless password == password_confirmation
   end
 end

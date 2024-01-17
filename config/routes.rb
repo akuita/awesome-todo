@@ -20,7 +20,7 @@ Rails.application.routes.draw do
     resources :users_registrations, only: [:create] do
     end
 
-    # New route for validating email format
+    # New route for validating email format from the existing code
     post 'validate_email_format', to: 'users_registrations#validate_email_format'
 
     # Preserving the existing route for checking email availability
@@ -36,6 +36,7 @@ Rails.application.routes.draw do
     get 'users/confirm-email/:token', to: 'users#confirm_email'
 
     # The new route for user registration is added here as per the requirement
+    # Removed the duplicate route for user registration
     post '/users/register', to: 'users_registrations#register'
 
     resources :users_verify_reset_password_requests, only: [:create] do
