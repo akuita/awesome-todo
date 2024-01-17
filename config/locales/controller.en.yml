@@ -1,11 +1,19 @@
----
 en:
   common:
     '200': success
+    'email_taken': 'The email address has already been taken.'
+    'email_available': 'The email address is available.'
     '201': created
     '302': deleted
     '401': unauthorized
     '403': forbidden
     '404': not found
     '422': unprocessable
+    notes:
+      title_already_exists: "Title already exists"
+      due_date_in_past: "Due date can't be in the past"
     '500': internal server error
+    'email_confirmation_success': 'Your email has been successfully confirmed.'
+    'email_confirmation_token_invalid_or_expired': 'The confirmation link is invalid or has expired.'
+    'confirmation_resent': "Confirmation email has been resent to %{email}."
+    'user_registration_success': 'Registration successful. Please check your email to confirm your account.'
