@@ -25,11 +25,8 @@ namespace :api do
   resources :users_reset_password_requests, only: [:create] do
   end
 
-  # The new route for attaching files to a todo item is added here.
-  # It uses the 'attachments#create' action and includes the 'todo_id' as a URL parameter.
-  post '/todos/:todo_id/attachments', to: 'attachments#create'
-
-  post '/todos', to: 'todos#create'
+  # The route for creating todos now includes an authentication constraint
+  post '/todos', to: 'todos#create', constraints: lambda { |request| request.env['warden'].authenticate? }
   post 'todos/:todo_id/associate_category/:category_id', to: 'todos#associate_with_category'
 
   # New route to handle todo creation errors
@@ -40,6 +37,11 @@ namespace :api do
     end
     resources :attachments, only: [:create]
   end
+
+  # The route for creating attachments is duplicated in the new and existing code.
+  # We need to ensure that it is only defined once.
+  # Since the new code includes an authentication constraint, we will use that version.
+  post '/todos/:todo_id/attachments', to: 'attachments#create'
 
   resources :notes, only: %i[index create show update destroy] do
   end

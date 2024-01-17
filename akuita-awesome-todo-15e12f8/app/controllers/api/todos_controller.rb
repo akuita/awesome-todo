@@ -1,7 +1,7 @@
 class Api::TodosController < Api::BaseController
   before_action :authenticate_user!
   before_action :set_locale
-  before_action :doorkeeper_authorize!, only: [:create, :associate_with_category, :log_todo_creation_error]
+  before_action :doorkeeper_authorize!, only: [:create, :associate_with_category]
   before_action :set_todo, only: [:show, :update, :destroy, :complete, :uncomplete, :associate_with_category]
   before_action :validate_category, only: [:create]
   before_action :set_category, only: [:associate_with_category]
@@ -19,7 +19,7 @@ class Api::TodosController < Api::BaseController
       return
     end
 
-    if todo.due_date.past?
+    if todo.due_date.nil? || todo.due_date.past?
       render json: { error: 'Please provide a valid future due date and time.' }, status: :bad_request
       return
     end
