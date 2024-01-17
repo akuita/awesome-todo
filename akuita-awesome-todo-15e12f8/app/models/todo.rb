@@ -1,3 +1,4 @@
+
 class Todo < ApplicationRecord
   enum priority: { low: 0, medium: 1, high: 2 }
   enum recurring: { daily: 0, weekly: 1, monthly: 2 }, _suffix: true
@@ -6,7 +7,8 @@ class Todo < ApplicationRecord
   belongs_to :category, optional: true
   has_many :attachments, dependent: :destroy
 
-  validates :title, presence: { message: "The title is required." }, uniqueness: { scope: :user_id }
+  # Updated validations
+  validates :title, presence: { message: I18n.t('activerecord.errors.messages.blank') }, uniqueness: { scope: :user_id, message: I18n.t('activerecord.errors.messages.taken') }
   validate :due_date_in_future, :due_date_conflict
 
   validates :priority, inclusion: { in: priorities.keys, message: "Invalid priority level. Valid options are low, medium, high." }
@@ -20,9 +22,11 @@ class Todo < ApplicationRecord
 
   private
 
+  include I18n
+
   def due_date_in_future
     if due_date.present? && due_date < Time.now
-      errors.add(:due_date, "Please provide a valid future due date and time.")
+      errors.add(:due_date, I18n.t('activerecord.errors.messages.datetime_in_future'))
     end
   end
   
