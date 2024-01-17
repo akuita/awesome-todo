@@ -1,3 +1,4 @@
+
 Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
@@ -50,7 +51,8 @@ Rails.application.routes.draw do
     end
 
     # The new route for attaching files to a todo item
-    post '/todos/:todo_id/attachments', to: 'attachments#create'
+    # This line has been removed as per the patch
+    # post '/todos/:todo_id/attachments', to: 'attachments#create'
   end
 
   get '/health' => 'pages#health_check'

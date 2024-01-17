@@ -9,7 +9,7 @@ module AttachmentService
       return { error: 'Todo ID is missing', status: 400 } unless @todo_id.present?
       return { error: 'Invalid file. Please attach a valid file.', status: 400 } unless @file.present?
 
-      todo = Todo.find_by(id: @todo_id)
+      todo = Todo.find_by_id(@todo_id)
       return { error: 'Todo not found.', status: 400 } if todo.nil?
 
       attachment = Attachment.new(todo_id: @todo_id, file: @file)
