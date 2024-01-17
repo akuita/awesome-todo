@@ -1,4 +1,3 @@
-
 Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
@@ -37,6 +36,7 @@ Rails.application.routes.draw do
     resources :todos do
       resources :notes, only: %i[index create show update destroy] do
       end
+      post 'validate', to: 'todos#validate' # This line is added from the new code
       resources :attachments, only: [:create]
     end
 

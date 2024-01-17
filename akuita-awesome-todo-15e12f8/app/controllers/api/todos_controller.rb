@@ -1,4 +1,3 @@
-
 class Api::TodosController < Api::BaseController
   before_action :authenticate_user!
   before_action :doorkeeper_authorize!, only: [:associate_with_category]
@@ -21,6 +20,31 @@ class Api::TodosController < Api::BaseController
     else
       render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
     end
+  end
+
+  def validate
+    todo = Todo.new(todo_params)
+    if todo.valid?
+      # Check for unique title within the user's todos
+      existing_todo = Todo.where(user_id: current_user.id, title: todo.title).exists?
+      if existing_todo
+        render json: { error: 'A todo with this title already exists.' }, status: :conflict
+        return
+      end
+
+      # Check for due_date conflict with existing todos
+      conflicting_todo = Todo.where(user_id: current_user.id).where.not(id: todo.id).where('due_date = ?', todo.due_date).exists?
+      if conflicting_todo
+        render json: { error: 'This due date conflicts with another scheduled todo.' }, status: :conflict
+        return
+      end
+
+      render json: { message: 'Todo details are valid' }, status: :ok
+    else
+      render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
+    end
+  rescue StandardError => e
+    render json: { error: e.message }, status: :bad_request
   end
 
   private
@@ -52,11 +76,4 @@ class Api::TodosController < Api::BaseController
   def todo_params
     params.require(:todo).permit(:title, :description, :due_date, :priority, :recurring, :user_id, :category_id)
   end
-end
-
-class Todo < ApplicationRecord
-  validates :title, presence: true, uniqueness: { scope: :user_id }
-  validate :due_date_cannot_be_in_the_past
-  validates :priority, inclusion: { in: Todo.priorities.keys }
-  validates :recurring, inclusion: { in: Todo.recurrings.keys }, allow_nil: true
 end
