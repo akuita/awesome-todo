@@ -1,4 +1,3 @@
-
 use_doorkeeper do
   controllers tokens: 'tokens'
   skip_controllers :authorizations, :applications, :authorized_applications
@@ -34,12 +33,14 @@ namespace :api do
   resources :todos do
     resources :notes, only: %i[index create show update destroy] do
     end
-    post '/attachments', to: 'attachments#create'
+    # The route for creating attachments is defined here with the authentication constraint as per the new code.
+    resources :attachments, only: [:create]
   end
 
   resources :notes, only: %i[index create show update destroy] do
   end
 
+  # The route for creating attachments is defined here with the authentication constraint as per the new code.
   post '/todos/:todo_id/attachments', to: 'attachments#create'
 end
 

@@ -1,4 +1,3 @@
-
 ---
 en:
   common:
@@ -17,4 +16,6 @@ en:
     missing_title: "Title is required for the todo."
     due_date_in_past: "Due date cannot be in the past."
     invalid_priority: "Priority value is not valid."
+  todo_categories:
+    association_success: "Todo has been successfully associated with the category."
   todo_creation_error: "An error occurred while creating the todo. Please try again later."
