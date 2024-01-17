@@ -25,22 +25,20 @@ namespace :api do
   resources :users_reset_password_requests, only: [:create] do
   end
 
-  post '/todos', to: 'todos#create', constraints: lambda { |request| request.env['warden'].authenticate? }
-  post 'todos/:todo_id/associate_category/:category_id', to: 'todos#associate_with_category'
-  post '/todos/error', to: 'todos#log_todo_creation_error'
+  # Updated the route for handling todo creation errors as per the requirement.
+  post '/todos/error', to: 'todos#handle_creation_error'
+
   post '/todo_categories', to: 'todo_categories#associate_todo_with_category'
 
   resources :todos do
     resources :notes, only: %i[index create show update destroy] do
     end
-    # The route for creating attachments is defined here with the authentication constraint as per the new code.
     resources :attachments, only: [:create]
   end
 
   resources :notes, only: %i[index create show update destroy] do
   end
 
-  # The route for creating attachments is defined here with the authentication constraint as per the new code.
   post '/todos/:todo_id/attachments', to: 'attachments#create'
 end
 
