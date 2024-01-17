@@ -33,10 +33,6 @@ class Api::NotesController < Api::BaseController
     end
   end
 
-  def create_params
-    params.require(:notes).permit(:title, :description)
-  end
-
   def update
     @note = Note.find_by('notes.id = ?', params[:id])
     raise ActiveRecord::RecordNotFound if @note.blank?
@@ -52,10 +48,6 @@ class Api::NotesController < Api::BaseController
     end
   end
 
-  def update_params
-    params.require(:notes).permit(:title, :description)
-  end
-
   def destroy
     @note = Note.find_by('notes.id = ?', params[:id])
 
@@ -66,5 +58,26 @@ class Api::NotesController < Api::BaseController
     else
       head :unprocessable_entity
     end
+  end
+
+  def associate_with_category
+    todo = Todo.find(params[:todo_id])
+    category = Category.find(params[:category_id])
+    TodoCategory.create!(todo: todo, category: category)
+    render json: { message: 'Todo successfully associated with category' }, status: :ok
+  rescue ActiveRecord::RecordNotFound => e
+    render json: { error: e.message }, status: :not_found
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.record.errors.full_messages.join(', ') }, status: :unprocessable_entity
+  end
+
+  private
+
+  def create_params
+    params.require(:notes).permit(:title, :description)
+  end
+
+  def update_params
+    params.require(:notes).permit(:title, :description)
   end
 end
