@@ -1,0 +1,12 @@
+---
+en:
+  common:
+    '200': success
+    '201': created
+    '302': deleted
+    '401': unauthorized
+    '403': forbidden
+    '404': not found
+    '422': unprocessable
+    '500': internal server error
+    todo_creation_error: "An error occurred while creating the todo. Please try again later."

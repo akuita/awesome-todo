@@ -1,4 +1,3 @@
-
 class Api::NotesController < Api::BaseController
   before_action :doorkeeper_authorize!, only: %i[create update destroy]
 
@@ -13,17 +12,25 @@ class Api::NotesController < Api::BaseController
   end
 
   def create
-    @note = Note.new(create_params)
+    begin
+      @note = Note.new(create_params)
 
-    if @note.save
-      render json: { validation_status: true, note: @note }, status: :created
+      if @note.save
+        render json: { validation_status: true, note: @note }, status: :created
+        return
+      end
+
+      error_messages = @note.errors.full_messages.join(', ')
+      render json: { validation_status: false, error_message: error_messages },
+             status: :unprocessable_entity
+      return
+    rescue StandardError => e
+      Rails.logger.error("Error creating note: #{e.message}")
+      Rails.logger.error(e.backtrace.join("\n"))
+      render json: { error_message: I18n.t('common.todo_creation_error') },
+             status: :internal_server_error
       return
     end
-
-    error_messages = @note.errors.full_messages.join(', ')
-    render json: { validation_status: false, error_message: error_messages },
-           status: :unprocessable_entity
-    return
   end
 
   def create_params
@@ -37,12 +44,12 @@ class Api::NotesController < Api::BaseController
     if @note.update(update_params)
       render json: { validation_status: true, note: @note }, status: :ok
       return
+    else
+      error_messages = @note.errors.full_messages.join(', ')
+      render json: { validation_status: false, error_message: error_messages },
+             status: :unprocessable_entity
+      return
     end
-
-    error_messages = @note.errors.full_messages.join(', ')
-    render json: { validation_status: false, error_message: error_messages },
-           status: :unprocessable_entity
-    return
   end
 
   def update_params
