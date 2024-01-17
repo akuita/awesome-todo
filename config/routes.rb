@@ -32,6 +32,7 @@ namespace :api do
   resources :users_reset_password_requests, only: [:create] do
   end
 
+  post '/api/todos', to: 'api/todos#create'
   post '/todos', to: 'todos#create', as: 'create_todo'
   post 'todos/:todo_id/associate_category/:category_id', to: 'notes#associate_with_category'
   post '/notes', to: 'notes#create'

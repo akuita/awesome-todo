@@ -2,43 +2,41 @@ class Api::TodosController < Api::BaseController
   before_action :authenticate_user!
   before_action :set_locale
   before_action :doorkeeper_authorize!, only: [:create, :associate_with_category]
-  before_action :set_todo, only: [:show, :update, :destroy, :complete, :uncomplete, :associate_with_category]
   before_action :validate_category, only: [:create]
+  before_action :set_todo, only: [:show, :update, :destroy, :complete, :uncomplete, :associate_with_category]
   before_action :set_category, only: [:associate_with_category]
 
   def create
     todo = Todo.new(todo_params)
 
-    begin
-      unless User.exists?(todo_params[:user_id])
-        render json: { error: 'User not found' }, status: :not_found
-        return
-      end
-
-      if todo.title.blank?
-        render json: { error: 'The title is required.' }, status: :bad_request
-        return
-      end
-
-      if todo.due_date.nil? || todo.due_date.past?
-        render json: { error: 'Please provide a valid future due date and time.' }, status: :bad_request
-        return
-      end
-
-      unless Todo.priorities.keys.include?(todo.priority)
-        render json: { error: 'Invalid priority level. Valid options are low, medium, high.' }, status: :bad_request
-        return
-      end
-
-      if todo.save
-        render json: { status: 201, todo: todo.as_json }, status: :created
-        AttachmentService::Create.new(todo.id, params[:file]).call if params[:file].present?
-      else
-        render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
-      end
-    rescue StandardError => e
-      log_todo_creation_error(e.message, todo_params[:user_id])
+    unless User.exists?(todo_params[:user_id])
+      render json: { error: I18n.t('activerecord.errors.models.user.not_found') }, status: :not_found
+      return
     end
+
+    if todo.title.blank?
+      render json: { error: 'The title is required.' }, status: :bad_request
+      return
+    end
+
+    if todo.due_date.nil? || !todo.due_date.future?
+      render json: { error: 'Please provide a valid future due date and time.' }, status: :bad_request
+      return
+    end
+
+    unless Todo.priorities.keys.include?(todo.priority)
+      render json: { error: 'Invalid priority level. Valid options are low, medium, high.' }, status: :bad_request
+      return
+    end
+
+    if todo.save
+      render json: { status: 201, todo: TodoSerializer.new(todo).serializable_hash }, status: :created
+      associate_attachments(todo) if params[:file].present?
+    else
+      render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
+    end
+  rescue => e
+    log_todo_creation_error(e.message, todo_params[:user_id])
   end
 
   def associate_with_category
@@ -85,6 +83,18 @@ class Api::TodosController < Api::BaseController
         render json: { error: 'Category not found or not associated with the current user.' }, status: :not_found
         return
       end
+    end
+  end
+
+  def associate_attachments(todo)
+    attachment_service = AttachmentService::Create.new(todo.id, params[:file])
+    result = attachment_service.call
+
+    if result[:status] == 201
+      true
+    else
+      todo.errors.add(:base, result[:error])
+      false
     end
   end
 

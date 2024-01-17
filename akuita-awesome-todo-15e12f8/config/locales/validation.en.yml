@@ -14,11 +14,12 @@ en:
         file_size_out_of_range: size %{file_size} is not between required range
         file_type_not_allowed: is not an allowed file type
         file_size_too_large: is too large (maximum size is %{size})
-        file_type_not_permitted: "File type is not allowed"
-        file_size_exceeds_limit: "File size exceeds the maximum allowed limit of %{max_size}"
-        file_presence_required: "A file must be attached"
         file_missing: is missing
         greater_than: must be greater than %{count}
+        unique_within_user: has already been taken for this user
+        future_due_date: must be in the future
+        priority_invalid: is not a valid priority
+        recurring_invalid: is not a valid recurring option
         greater_than_or_equal_to: must be greater than or equal to %{count}
         in: must be in %{count}
         invalid: is invalid
@@ -30,3 +31,6 @@ en:
         too_long: is too long (maximum is %{count} characters)
         too_short: is too short (minimum is %{count} characters)
         wrong_length: is the wrong length (should be %{count} characters)
+        file_type_not_permitted: "File type is not allowed"
+        file_size_exceeds_limit: "File size exceeds the maximum allowed limit of %{max_size}"
+        file_presence_required: "A file must be attached"
