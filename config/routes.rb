@@ -18,6 +18,7 @@ Rails.application.routes.draw do
     resources :users_registrations, only: [:create] do
     end
 
+    get 'users/check_email_availability', to: 'users#check_email_availability'
     # Preserving the existing route for checking email availability
     get 'users_registrations/check_email_availability', to: 'users_registrations#check_email_availability', as: 'check_email'
 

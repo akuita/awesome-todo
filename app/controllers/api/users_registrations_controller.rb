@@ -1,5 +1,6 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :check_email_availability, only: :create
+  skip_before_action :check_email_availability, only: :check_email_availability
   before_action :validate_registration_params, only: [:create, :register]
 
   def create
@@ -79,4 +80,15 @@ class Api::UsersRegistrationsController < Api::BaseController
   def resend_confirmation_params
     params.permit(:email)
   end
+end
+
+# GET /api/users/check_email_availability
+def check_email_availability
+  email = params[:email]
+  email_taken = User.exists?(email: email)
+  render json: { available: !email_taken }
+rescue StandardError => e
+  render json: { error: e.message }, status: :internal_server_error
+end
+
 end

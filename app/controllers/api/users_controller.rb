@@ -1,3 +1,4 @@
+
 class Api::UsersController < ApplicationController
   before_action :load_email_confirmation, only: [:confirm_email]
 
@@ -11,6 +12,13 @@ class Api::UsersController < ApplicationController
       @user.confirm_email
       render json: { status: 200, message: 'Email address confirmed successfully.' }, status: :ok
     end
+  end
+
+  # GET /api/users/check_email_availability
+  def check_email_availability
+    email = params[:email]
+    email_taken = User.exists?(email: email)
+    render json: { available: !email_taken }
   end
 
   private
