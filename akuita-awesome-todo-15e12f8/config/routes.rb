@@ -27,6 +27,8 @@ Rails.application.routes.draw do
     end
 
     post '/todos', to: 'todos#create'
+    # The new code has 'notes' instead of 'todos' in the route, which seems to be a mistake.
+    # The existing code has the correct controller 'todos#associate_with_category'.
     post 'todos/:todo_id/associate_category/:category_id', to: 'todos#associate_with_category'
 
     resources :todos do

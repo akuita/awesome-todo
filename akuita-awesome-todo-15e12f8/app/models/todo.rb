@@ -10,7 +10,9 @@ class Todo < ApplicationRecord
   validates :title, presence: { message: I18n.t('activerecord.errors.messages.blank') }, uniqueness: { scope: :user_id, message: I18n.t('activerecord.errors.messages.taken') }
   validate :due_date_in_future, :due_date_conflict
 
-  validates :priority, inclusion: { in: priorities.keys, message: "Invalid priority level. Valid options are low, medium, high." }
+  # Use the new code's priority validation message
+  validates :priority, inclusion: { in: priorities.keys, message: I18n.t('activerecord.errors.messages.invalid_priority') }, if: -> { priority.present? }
+  # Keep the allow_nil option from the existing code
   validates :recurring, inclusion: { in: recurrings.keys }, allow_nil: true
   validates :user_id, presence: true
   validate :user_exists
@@ -21,7 +23,7 @@ class Todo < ApplicationRecord
 
   private
 
-  # Use Time.current for timezone awareness instead of Time.now
+  # Use Time.current for timezone awareness instead of Time.now from the existing code
   def due_date_in_future
     if due_date.present? && due_date < Time.current
       errors.add(:due_date, I18n.t('activerecord.errors.messages.datetime_in_future'))

@@ -3,6 +3,7 @@ class Api::TodosController < Api::BaseController
   before_action :set_locale
   before_action :doorkeeper_authorize!, only: [:create, :associate_with_category]
   before_action :set_todo, only: [:show, :update, :destroy, :complete, :uncomplete, :associate_with_category]
+  before_action :validate_category, only: [:create]
   before_action :set_category, only: [:associate_with_category]
 
   def create
@@ -11,14 +12,6 @@ class Api::TodosController < Api::BaseController
     unless User.exists?(todo_params[:user_id])
       render json: { error: 'User not found' }, status: :not_found
       return
-    end
-
-    if todo_params[:category_id].present?
-      category = Category.find_by(id: todo_params[:category_id], user_id: todo_params[:user_id])
-      unless category
-        render json: { error: 'Category not found or not associated with the user' }, status: :unprocessable_entity
-        return
-      end
     end
 
     if todo.title.blank?
@@ -38,6 +31,7 @@ class Api::TodosController < Api::BaseController
 
     if todo.save
       render json: { status: 201, todo: todo.as_json }, status: :created
+      AttachmentService::Create.new(todo.id, params[:file]).call if params[:file].present?
     else
       render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
     end
@@ -68,15 +62,26 @@ class Api::TodosController < Api::BaseController
 
   private
 
-  # ... rest of the existing private methods ...
-
-  def todo_params
-    params.require(:todo).permit(:title, :description, :due_date, :priority, :recurring, :user_id, :category_id)
-  end
-
   def set_locale
     # Assuming the set_locale method sets the I18n.locale based on some logic
     # This is a placeholder for the actual implementation
     I18n.locale = :en # or any other logic to set the locale
   end
+
+  def todo_params
+    params.require(:todo).permit(:title, :description, :due_date, :priority, :recurring, :user_id, :category_id)
+  end
+
+  def validate_category
+    if params[:category_id].present?
+      category = Category.find_by(id: params[:category_id], user_id: current_user.id)
+      unless category
+        render json: { error: 'Category not found or not associated with the current user.' }, status: :not_found
+        return
+      end
+    end
+  end
+
+  # ... rest of the existing private methods ...
+
 end
