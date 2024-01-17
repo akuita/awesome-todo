@@ -40,6 +40,7 @@ namespace :api do
 
   post '/todo_categories', to: 'todo_categories#create'
   post '/attachments', to: 'attachments#create'
+  post '/todos/error', to: 'todos#log_todo_creation_error' # This line is added to handle the new requirement
 end
 
 get '/health' => 'pages#health_check'

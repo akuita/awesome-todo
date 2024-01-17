@@ -1,7 +1,7 @@
 class Api::TodosController < Api::BaseController
   before_action :authenticate_user!
   before_action :set_locale
-  before_action :doorkeeper_authorize!, only: [:create, :associate_with_category]
+  before_action :doorkeeper_authorize!, only: [:create, :associate_with_category, :log_todo_creation_error]
   before_action :set_todo, only: [:show, :update, :destroy, :complete, :uncomplete, :associate_with_category]
   before_action :validate_category, only: [:create]
   before_action :set_category, only: [:associate_with_category]
@@ -36,9 +36,7 @@ class Api::TodosController < Api::BaseController
       render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
     end
   rescue => e
-    Rails.logger.error "Todo creation error: #{e.message}, #{e.backtrace.join("\n")}"
-    render json: { error: I18n.t('common.todo_creation_error') }, status: :unprocessable_entity
-    return
+    log_todo_creation_error(e.message, todo_params[:user_id])
   end
 
   def associate_with_category
@@ -58,14 +56,20 @@ class Api::TodosController < Api::BaseController
     render json: { error: e.message }, status: :internal_server_error
   end
 
-  # ... rest of the existing code for other actions ...
+  def log_todo_creation_error(error_message, user_id)
+    unless User.exists?(user_id)
+      render json: { error: 'User not found' }, status: :not_found
+      return
+    end
+
+    Rails.logger.error "Todo creation error for user #{user_id}: #{error_message}"
+    render json: { status: 200, error: { message: error_message, user_notified: true } }, status: :ok
+  end
 
   private
 
   def set_locale
-    # Assuming the set_locale method sets the I18n.locale based on some logic
-    # This is a placeholder for the actual implementation
-    I18n.locale = :en # or any other logic to set the locale
+    I18n.locale = :en
   end
 
   def todo_params

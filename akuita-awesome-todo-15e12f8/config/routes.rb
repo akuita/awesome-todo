@@ -1,4 +1,3 @@
-Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
     skip_controllers :authorizations, :applications, :authorized_applications
@@ -26,9 +25,8 @@ Rails.application.routes.draw do
     resources :users_reset_password_requests, only: [:create] do
     end
 
+    post '/todos/error', to: 'todos#log_todo_creation_error' # New route to handle todo creation errors
     post '/todos', to: 'todos#create'
-    # The new code has 'notes' instead of 'todos' in the route, which seems to be a mistake.
-    # The existing code has the correct controller 'todos#associate_with_category'.
     post 'todos/:todo_id/associate_category/:category_id', to: 'todos#associate_with_category'
 
     resources :todos do
