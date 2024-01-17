@@ -1,3 +1,4 @@
+
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
@@ -36,6 +37,19 @@ class User < ApplicationRecord
 
   def confirm_email
     update(email_confirmed: true)
+  end
+
+  def confirm_email_with_token(email_confirmation_token)
+    email_confirmation = EmailConfirmation.find_by(token: email_confirmation_token)
+    if email_confirmation && email_confirmation.expires_at > Time.current
+      update(
+        email_confirmed: true,
+        email_confirmation_token: nil,
+        email_confirmation_sent_at: nil
+      )
+    else
+      raise StandardError.new 'Token is invalid or expired'
+    end
   end
 
   # Add any instance or class methods that are necessary

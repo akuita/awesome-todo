@@ -11,6 +11,7 @@ Rails.application.routes.draw do
   namespace :api do
     resources :users_verify_confirmation_token, only: [:create] do
     end
+    post 'users/verify_confirmation_token', to: 'users_verify_confirmation_token#verify'
 
     resources :users_passwords, only: [:create] do
     end
@@ -18,7 +19,6 @@ Rails.application.routes.draw do
     resources :users_registrations, only: [:create] do
     end
 
-    get 'users/check_email_availability', to: 'users#check_email_availability'
     # Preserving the existing route for checking email availability
     get 'users_registrations/check_email_availability', to: 'users_registrations#check_email_availability', as: 'check_email'
 

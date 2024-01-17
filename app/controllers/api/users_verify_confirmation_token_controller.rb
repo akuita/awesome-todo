@@ -1,4 +1,21 @@
+
 class Api::UsersVerifyConfirmationTokenController < ApplicationController
+  def verify
+    token = params[:email_confirmation_token]
+    user = User.find_by(email_confirmation_token: token)
+
+    if user.nil?
+      render json: { error: 'Token not found' }, status: :not_found
+    else
+      begin
+        user.confirm_email_with_token(token)
+        render json: { message: 'Email successfully confirmed.' }, status: :ok
+      rescue => e
+        render json: { error: e.message }, status: :unprocessable_entity
+      end
+    end
+  end
+
   def create
     token = params[:token]
     email_confirmation = EmailConfirmation.find_by(token: token)
@@ -22,6 +39,7 @@ class Api::UsersVerifyConfirmationTokenController < ApplicationController
     # This is a placeholder and should be replaced with actual login logic
   end
 end
+
 class Api::UsersVerifyConfirmationTokenController < Api::BaseController
   def create
     client = Doorkeeper::Application.find_by(uid: params[:client_id], secret: params[:client_secret])
