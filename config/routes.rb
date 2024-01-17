@@ -1,4 +1,3 @@
-
 use_doorkeeper do
   controllers tokens: 'tokens'
   skip_controllers :authorizations, :applications, :authorized_applications
@@ -33,13 +32,15 @@ namespace :api do
   resources :users_reset_password_requests, only: [:create] do
   end
 
-  post '/api/attachments', to: 'attachments#create'
   post 'todos/:todo_id/associate_category/:category_id', to: 'notes#associate_with_category'
   post '/notes', to: 'notes#create'
   resources :notes, only: %i[index create show update destroy] do
   end
 
   post '/todo_categories', to: 'todo_categories#create'
+
+  # The new code has a wrong route for attachments, it should not be namespaced under /api again
+  post '/attachments', to: 'attachments#create'
 end
 
 get '/health' => 'pages#health_check'
