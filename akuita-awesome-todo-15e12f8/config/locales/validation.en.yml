@@ -1,4 +1,3 @@
----
 en:
   activerecord:
     errors:
@@ -11,11 +10,13 @@ en:
         datetime_in_past: must be before the date and time today
         datetime_type: must be a valid date and time
         file_content_type_invalid: has an invalid content type
-        datetime_in_future: must be in the future
         file_limit_out_of_range: total number is out of range
         file_size_out_of_range: size %{file_size} is not between required range
         file_type_not_allowed: is not an allowed file type
         file_size_too_large: is too large (maximum size is %{size})
+        file_type_not_permitted: "File type is not allowed"
+        file_size_exceeds_limit: "File size exceeds the maximum allowed limit of %{max_size}"
+        file_presence_required: "A file must be attached"
         file_missing: is missing
         greater_than: must be greater than %{count}
         greater_than_or_equal_to: must be greater than or equal to %{count}

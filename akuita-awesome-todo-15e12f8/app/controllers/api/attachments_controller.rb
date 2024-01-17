@@ -6,7 +6,7 @@ class Api::AttachmentsController < Api::BaseController
     return render json: { error: 'Todo item not found.' }, status: :not_found if todo.nil?
     return render json: { error: 'Invalid file. Please attach a valid file.' }, status: :bad_request if attachment_params[:file].blank?
 
-    attachment = todo.attachments.build(attachment_params)
+    attachment = Attachment.new(todo: todo, file: attachment_params[:file])
 
     if attachment.save
       render json: {

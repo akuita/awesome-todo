@@ -1,5 +1,5 @@
 module AttachmentService
-  class Create < BaseService
+  class Create
     def initialize(todo_id, file)
       @todo_id = todo_id
       @file = file
