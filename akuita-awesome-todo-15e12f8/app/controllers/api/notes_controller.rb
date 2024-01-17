@@ -18,12 +18,26 @@ class Api::NotesController < Api::BaseController
       if @note.save
         render json: { validation_status: true, note: @note }, status: :created
         return
-      end
+      else
+        # Check if the user_id is present and if the current user is authorized
+        unless @note.user_id && current_resource_owner.id == @note.user_id
+          render json: { validation_status: false, error_message: I18n.t('errors.messages.not_authorized') },
+                 status: :unauthorized
+          return
+        end
 
-      error_messages = @note.errors.full_messages.join(', ')
-      render json: { validation_status: false, error_message: error_messages },
-             status: :unprocessable_entity
-      return
+        # Validate category_id if provided
+        if @note.category_id && !Category.exists?(@note.category_id)
+          render json: { validation_status: false, error_message: I18n.t('errors.messages.invalid_category') },
+                 status: :unprocessable_entity
+          return
+        end
+
+        error_messages = @note.errors.full_messages.join(', ')
+        render json: { validation_status: false, error_message: error_messages },
+               status: :unprocessable_entity
+        return
+      end
     rescue StandardError => e
       Rails.logger.error("Error creating note: #{e.message}")
       Rails.logger.error(e.backtrace.join("\n"))
@@ -74,7 +88,7 @@ class Api::NotesController < Api::BaseController
   private
 
   def create_params
-    params.require(:notes).permit(:title, :description)
+    params.require(:notes).permit(:title, :description, :due_date, :priority, :recurring, :user_id, :category_id)
   end
 
   def update_params

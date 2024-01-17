@@ -28,17 +28,19 @@ Rails.application.routes.draw do
     resources :users_reset_password_requests, only: [:create] do
     end
 
-    # The new code does not have this route, but it's in the existing code, so we keep it.
+    # Keep the route from the existing code
     post 'notes/:todo_id/associate_category/:category_id', to: 'notes#associate_with_category'
 
-    # The existing code does not have this nested route, but it's in the new code, so we add it.
+    # Add the nested resources from the new code
     resources :todos do
       resources :notes, only: %i[index create show update destroy] do
       end
       resources :attachments, only: [:create]
     end
 
-    # The existing code has this route for notes outside of the todos resource, so we keep it.
+    # Keep the route for notes from the new code
+    post '/api/notes', to: 'api/notes#create', as: 'create_note'
+    # Keep the route for notes from the existing code
     resources :notes, only: %i[index create show update destroy] do
     end
   end

@@ -35,6 +35,9 @@ namespace :api do
   # Merging the new route for associating todos with categories from the existing code
   post 'todos/:todo_id/associate_category/:category_id', to: 'notes#associate_with_category'
 
+  # Added the new route for creating notes as per the patch
+  post '/notes', to: 'notes#create'
+
   resources :notes, only: %i[index create show update destroy] do
   end
 

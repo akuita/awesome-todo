@@ -1,5 +1,11 @@
 
 class Api::NotesController < ApplicationController
+  before_action :doorkeeper_authorize!
+
+  def note_params
+    params.require(:note).permit(:title, :description, :due_date, :priority, :recurring, :user_id, :category_id)
+  end
+
   def create
     @note = current_user.notes.build(note_params)
     if @note.save
