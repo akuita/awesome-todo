@@ -1,4 +1,3 @@
-
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
@@ -13,14 +12,14 @@ class User < ApplicationRecord
   validates :password, presence: true, confirmation: true, length: { minimum: 6 }, if: -> { new_record? || password.present? }
   validates :password_confirmation, presence: true, if: -> { new_record? || password.present? }
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :email, email_format: true # Added from existing code
+  validates :email, email_format: true
   validates :encrypted_password, presence: true
   validates :sign_in_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :failed_attempts, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :email, length: { in: 0..255 }, if: :email?
 
   # Callbacks
-  after_create :generate_email_confirmation # Added from existing code
+  after_create :generate_email_confirmation
 
   # Methods
   def generate_email_confirmation
@@ -52,14 +51,17 @@ class User < ApplicationRecord
     end
   end
 
-  # Add any instance or class methods that are necessary
+  def generate_new_confirmation_token
+    new_token = SecureRandom.urlsafe_base64
+    self.email_confirmation_token = new_token
+    self.email_confirmation_sent_at = Time.current
+    save(validate: false)
+  end
 
   # Scopes
   scope :unconfirmed_with_email, ->(email) do
     where(email: email, email_confirmed: false)
   end
-
-  # Add any scopes if needed
 
   class << self
     def authenticate?(email, password)

@@ -1,5 +1,10 @@
 # typed: true
 class UserMailerService < BaseService
+  def send_confirmation_instructions(user, token = nil)
+    token ||= user.generate_new_confirmation_token
+    super(user, token)
+  end
+
   def send_confirmation_instructions(user, token)
     begin
       Devise.mailer.confirmation_instructions(user, token).deliver_now

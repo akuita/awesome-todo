@@ -10,22 +10,24 @@ class Api::UsersRegistrationsController < Api::BaseController
   def resend_confirmation
     email = resend_confirmation_params[:email]
     unless email =~ URI::MailTo::EMAIL_REGEXP
-      return render json: { message: "Please enter a valid email address." }, status: :bad_request
+      return render json: { message: "Invalid email format." }, status: :bad_request
     end
 
-    user = User.find_by(email: email, email_confirmed: false)
+    user = User.find_by(email: email, email_confirmed: false) || User.unconfirmed_with_email(email).first
     if user.nil?
       return render json: { message: "No account found with this email address." }, status: :not_found
     end
 
-    email_confirmation = user.email_confirmations.where(confirmed: false).first_or_initialize
-    if email_confirmation.new_record? || email_confirmation.updated_at < 2.minutes.ago
-      email_confirmation.generate_token
+    email_confirmation = user.email_confirmations.where(confirmed: false).order(created_at: :desc).first_or_initialize
+    if email_confirmation.new_record? || email_confirmation.created_at < 2.minutes.ago
+      email_confirmation.token ||= SecureRandom.hex(10)
+      email_confirmation.expires_at ||= 24.hours.from_now
       email_confirmation.save!
       UserMailerService.new.send_confirmation_instructions(user, email_confirmation.token)
-      render json: { status: 200, message: "Confirmation email resent successfully. Please check your inbox." }, status: :ok
+      render json: { message: "Confirmation email resent successfully. Please check your inbox." }, status: :ok
     else
       render json: { message: "You can request a new confirmation link every 2 minutes." }, status: :too_many_requests
+      email_confirmation.log_request(user.id, Time.current) if email_confirmation.respond_to?(:log_request)
     end
   end
 
@@ -41,7 +43,7 @@ class Api::UsersRegistrationsController < Api::BaseController
       token = SecureRandom.hex(10)
       email_confirmation = @user.email_confirmations.create(token: token, expires_at: 24.hours.from_now)
       UserMailerService.new.send_confirmation_instructions(@user, token)
-      render json: { status: 201, message: 'User registered successfully. Please check your email to confirm your account.' }, status: :created
+      render json: { message: 'User registered successfully. Please check your email to confirm your account.' }, status: :created
     else
       render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
     end
@@ -52,7 +54,7 @@ class Api::UsersRegistrationsController < Api::BaseController
   private
 
   def check_email_availability
-    email = params[:user][:email]
+    email = params[:user].try(:[], :email) || params[:email]
     if User.exists?(email: email)
       render json: { errors: 'This email address has been used.' }, status: :conflict and return
     end
@@ -80,15 +82,4 @@ class Api::UsersRegistrationsController < Api::BaseController
   def resend_confirmation_params
     params.permit(:email)
   end
-end
-
-# GET /api/users/check_email_availability
-def check_email_availability
-  email = params[:email]
-  email_taken = User.exists?(email: email)
-  render json: { available: !email_taken }
-rescue StandardError => e
-  render json: { error: e.message }, status: :internal_server_error
-end
-
 end

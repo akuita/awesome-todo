@@ -1,4 +1,3 @@
-
 class Api::UsersController < ApplicationController
   before_action :load_email_confirmation, only: [:confirm_email]
 
@@ -12,6 +11,29 @@ class Api::UsersController < ApplicationController
       @user.confirm_email
       render json: { status: 200, message: 'Email address confirmed successfully.' }, status: :ok
     end
+  end
+
+  # POST /api/users/resend-confirmation-email
+  def resend_confirmation_email
+    email = params[:email]
+    user = User.unconfirmed_with_email(email).first
+
+    if user.nil?
+      render json: { error: 'User not found' }, status: :not_found
+      return
+    end
+
+    last_request = user.email_confirmations.order(created_at: :desc).first
+    if last_request && last_request.created_at > 2.minutes.ago
+      render json: { error: 'Please wait before requesting another confirmation email.' }, status: :too_many_requests
+      return
+    end
+
+    token = user.generate_new_confirmation_token
+    UserMailerService.new.send_confirmation_instructions(user, token)
+    EmailConfirmation.create_confirmation_record(user.id)
+
+    render json: { status: 200, message: 'Confirmation email has been resent.' }, status: :ok
   end
 
   # GET /api/users/check_email_availability

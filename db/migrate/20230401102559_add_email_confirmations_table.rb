@@ -6,6 +6,7 @@ class AddEmailConfirmationsTable < ActiveRecord::Migration[6.0]
       t.string :token
       t.datetime :expires_at
       t.boolean :confirmed, default: false
+      t.datetime :requested_at
 
       t.timestamps null: false
     end

@@ -33,6 +33,14 @@ class EmailConfirmation < ApplicationRecord
     save
   end
 
+  def log_request(user_id, timestamp)
+    EmailConfirmationRequest.create!(
+      user_id: user_id,
+      requested_at: timestamp
+    )
+  end
+
+
   # This method is kept from the existing code to handle creating a confirmation record
   def create_confirmation_record(user_id)
     self.user_id = user_id
