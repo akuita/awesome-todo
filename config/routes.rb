@@ -24,7 +24,6 @@ namespace :api do
   get '/users/registration-errors' => 'users_registrations#registration_errors'
 
   post '/users/resend-confirmation' => 'users#resend_confirmation'
-  post '/todos/error', to: 'todos#handle_todo_creation_error', as: 'handle_todo_creation_error_api_todos'
   post '/users/validate-email', to: 'users#validate_email'
 
   resources :users_verify_reset_password_requests, only: [:create] do
@@ -37,6 +36,12 @@ namespace :api do
   post '/notes', to: 'notes#create'
   resources :notes, only: %i[index create show update destroy] do
   end
+
+  # The new route for associating todos with categories is incorrect according to the requirement.
+  # It should be a POST request to '/api/todo_categories' with the specified parameters.
+  # The following line is the corrected route.
+  post '/todo_categories', to: 'todo_categories#create'
+
   post '/api/attachments', to: 'api/attachments#create'
 end
 
