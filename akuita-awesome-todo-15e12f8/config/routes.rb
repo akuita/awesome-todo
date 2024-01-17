@@ -37,14 +37,19 @@ Rails.application.routes.draw do
       resources :notes, only: %i[index create show update destroy] do
       end
       post 'validate', to: 'todos#validate' # This line is added from the new code
-      resources :attachments, only: [:create]
+      # The nested route for attachments is not needed as we have a dedicated route above
+      # resources :attachments, only: [:create]
     end
 
-    # Keep the route for notes from the new code
-    post '/api/notes', to: 'api/notes#create', as: 'create_note'
+    # The new route for attaching files to a todo item
+    post '/todos/:todo_id/attachments', to: 'attachments#create'
+
     # Keep the route for notes from the existing code
     resources :notes, only: %i[index create show update destroy] do
     end
+
+    # The route for creating a note from the new code is redundant with the existing resources :notes block
+    # post '/api/notes', to: 'api/notes#create', as: 'create_note' # This line is removed to resolve conflict
   end
 
   get '/health' => 'pages#health_check'

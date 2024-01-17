@@ -4,11 +4,20 @@ class Api::AttachmentsController < Api::BaseController
   def create
     todo = Todo.find_by(id: attachment_params[:todo_id])
     return render json: { error: 'Todo not found' }, status: :not_found if todo.nil?
+    return render json: { error: 'Invalid file. Please attach a valid file.' }, status: :bad_request if attachment_params[:file].blank?
 
     attachment = todo.attachments.build(attachment_params)
 
     if attachment.save
-      render json: { message: 'File successfully attached to todo item' }, status: :created
+      render json: {
+        status: 201,
+        attachment: {
+          id: attachment.id,
+          todo_id: attachment.todo_id,
+          file: attachment.file,
+          created_at: attachment.created_at.iso8601
+        }
+      }, status: :created
     else
       render json: { errors: attachment.errors.full_messages }, status: :unprocessable_entity
     end

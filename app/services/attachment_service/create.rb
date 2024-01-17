@@ -11,11 +11,22 @@ module AttachmentService
 
     def call
       return { error: 'Todo ID and file are required' } unless todo_id && file
+      return { error: 'Todo not found' } unless Todo.exists?(todo_id: todo_id)
+      return { error: 'Invalid file. Please attach a valid file.' } unless valid_file?
 
       attachment = Attachment.new(todo_id: todo_id, file: file)
-      return { error: attachment.errors.full_messages } unless attachment.save
+      if attachment.save
+        { status: 201, attachment: attachment }
+      else
+        { error: attachment.errors.full_messages, status: :unprocessable_entity }
+      end
+    end
 
-      attachment
+    private
+
+    def valid_file?
+      # Assuming file is an uploaded file object that responds to `size` and `original_filename`
+      file.respond_to?(:size) && file.size > 0 && file.respond_to?(:original_filename)
     end
   end
 end
