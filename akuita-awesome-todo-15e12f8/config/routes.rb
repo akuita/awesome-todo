@@ -26,8 +26,8 @@ Rails.application.routes.draw do
     resources :users_reset_password_requests, only: [:create] do
     end
 
-    # The new route for handling todo creation errors is added here
-    post '/todos/error', to: 'todos#handle_todo_creation_error'
+    # The route for creating a todo item is already present in the new code
+    post '/todos', to: 'todos#create'
 
     # Keep the route from the existing code
     post 'notes/:todo_id/associate_category/:category_id', to: 'notes#associate_with_category'
@@ -36,20 +36,21 @@ Rails.application.routes.draw do
     resources :todos do
       resources :notes, only: %i[index create show update destroy] do
       end
-      post 'validate', to: 'todos#validate' # This line is added from the new code
-      # The nested route for attachments is not needed as we have a dedicated route above
-      # resources :attachments, only: [:create]
+      # The validate route is not needed according to the requirement
+      # Removed the following line:
+      # post 'validate', to: 'todos#validate'
+      resources :attachments, only: [:create]
     end
 
-    # The new route for attaching files to a todo item
-    post '/todos/:todo_id/attachments', to: 'attachments#create'
-
+    # The route for creating notes is duplicated in the new code, keep only one
+    # Removed the following line:
+    # post '/api/notes', to: 'api/notes#create', as: 'create_note'
     # Keep the route for notes from the existing code
     resources :notes, only: %i[index create show update destroy] do
     end
 
-    # The route for creating a note from the new code is redundant with the existing resources :notes block
-    # post '/api/notes', to: 'api/notes#create', as: 'create_note' # This line is removed to resolve conflict
+    # The new route for attaching files to a todo item
+    post '/todos/:todo_id/attachments', to: 'attachments#create'
   end
 
   get '/health' => 'pages#health_check'
