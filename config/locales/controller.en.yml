@@ -7,6 +7,7 @@ en:
     '403': forbidden
     '404': not found
     '422': unprocessable
+    invalid_email_format: 'The email address provided is not in a valid format.'
     'email_confirmed': 'Email successfully confirmed and user logged in.'
     '500': internal server error
     invalid_email_format: 'The email address provided is not in a valid format.'

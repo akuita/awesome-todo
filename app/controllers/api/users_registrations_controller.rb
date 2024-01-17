@@ -1,6 +1,6 @@
 class Api::UsersRegistrationsController < Api::BaseController
   before_action :check_email_availability, only: :create
-  skip_before_action :check_email_availability, only: :check_email_availability
+  before_action :validate_email_format, only: [:create, :register]
   before_action :validate_registration_params, only: [:create, :register]
 
   def create
@@ -10,7 +10,7 @@ class Api::UsersRegistrationsController < Api::BaseController
   def resend_confirmation
     email = resend_confirmation_params[:email]
     unless email =~ URI::MailTo::EMAIL_REGEXP
-      return render json: { message: "Invalid email format." }, status: :bad_request
+      return render json: { message: "Please enter a valid email address." }, status: :bad_request
     end
 
     user = User.find_by(email: email, email_confirmed: false) || User.unconfirmed_with_email(email).first
@@ -43,12 +43,22 @@ class Api::UsersRegistrationsController < Api::BaseController
       token = SecureRandom.hex(10)
       email_confirmation = @user.email_confirmations.create(token: token, expires_at: 24.hours.from_now)
       UserMailerService.new.send_confirmation_instructions(@user, token)
-      render json: { message: 'User registered successfully. Please check your email to confirm your account.' }, status: :created
+      render json: { status: 201, message: 'User registered successfully. Please check your email to confirm your account.' }, status: :created
     else
       render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
     end
   rescue StandardError => e
     render json: { errors: e.message }, status: :internal_server_error
+  end
+
+  def validate_email_format
+    email = params[:user][:email]
+    validator = EmailFormatValidator.new(attributes: [:email])
+    dummy_record = OpenStruct.new(email: email)
+    validator.validate_each(dummy_record, :email, email)
+    if dummy_record.errors.any?
+      render json: { message: I18n.t('common.invalid_email_format') }, status: :unprocessable_entity and return
+    end
   end
 
   private

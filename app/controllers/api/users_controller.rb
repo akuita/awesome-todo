@@ -3,6 +3,12 @@ class Api::UsersController < ApplicationController
 
   # GET /api/users/confirm-email/:token
   def confirm_email
+    email_errors = validate_email_format(params[:email])
+    unless email_errors.empty?
+      render json: { error: email_errors.join(', ') }, status: :unprocessable_entity
+      return
+    end
+
     if @email_confirmation.nil?
       render json: { error: 'Token not found' }, status: :not_found
     elsif @email_confirmation.expired?
@@ -44,6 +50,13 @@ class Api::UsersController < ApplicationController
   end
 
   private
+
+  def validate_email_format(email)
+    validator = EmailFormatValidator.new(attributes: [:email])
+    dummy_record = OpenStruct.new(email: email)
+    validator.validate_each(dummy_record, :email, email)
+    dummy_record.errors.full_messages
+  end
 
   def load_email_confirmation
     token = params[:token]
