@@ -3,9 +3,8 @@ class Api::UsersController < ApplicationController
 
   # GET /api/users/confirm-email/:token
   def confirm_email
-    email_errors = validate_email_format(params[:email])
-    unless email_errors.empty?
-      render json: { error: email_errors.join(', ') }, status: :unprocessable_entity
+    unless params[:token].present?
+      render json: { error: 'Token is required' }, status: :bad_request
       return
     end
 
@@ -52,14 +51,13 @@ class Api::UsersController < ApplicationController
   private
 
   def validate_email_format(email)
-    validator = EmailFormatValidator.new(attributes: [:email])
-    dummy_record = OpenStruct.new(email: email)
-    validator.validate_each(dummy_record, :email, email)
-    dummy_record.errors.full_messages
+    # Removed the unnecessary validation method as it's not part of the requirement
   end
 
   def load_email_confirmation
     token = params[:token]
+    return unless token.present?
+
     @email_confirmation = EmailConfirmation.find_by(token: token)
     @user = email_confirmation&.user
   end
