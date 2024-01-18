@@ -1,11 +1,13 @@
 class Api::TodosController < Api::BaseController
   before_action :authenticate_user!, except: [:assign_tags]
+  before_action :set_todo, only: [:show, :update, :destroy, :complete, :uncomplete, :associate_with_category, :assign_category, :attach_files]
   before_action :set_tags, only: [:assign_tags]
   before_action :set_locale
-  before_action :doorkeeper_authorize!, only: [:create, :associate_with_category, :validate, :handle_creation_error, :attach_files]
+  before_action :doorkeeper_authorize!, only: [:create, :associate_with_category, :validate, :handle_creation_error, :assign_category, :attach_files]
   before_action :validate_category, only: [:create]
-  before_action :set_todo, only: [:show, :update, :destroy, :complete, :uncomplete, :associate_with_category, :attach_files]
   before_action :set_category, only: [:associate_with_category]
+
+  # ... other existing methods ...
 
   def assign_tags
     authenticate_user!
@@ -26,6 +28,27 @@ class Api::TodosController < Api::BaseController
     render json: { status: 201, todo_tag: todo_tag }, status: :created
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.record.errors.full_messages.join(', ') }, status: :unprocessable_entity
+  end
+
+  def assign_category
+    category_id = params.require(:category_id)
+
+    unless Todo.exists?(@todo.id)
+      render json: { error: 'Todo item not found' }, status: :not_found
+      return
+    end
+
+    unless Category.exists?(category_id)
+      render json: { error: 'Category not found' }, status: :not_found
+      return
+    end
+
+    todo_category = TodoCategory.create!(todo: @todo, category_id: category_id)
+    render json: { status: 201, todo_category: TodoCategorySerializer.new(todo_category).serializable_hash }, status: :created
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.record.errors.full_messages.join(', ') }, status: :unprocessable_entity
+  rescue StandardError => e
+    render json: { error: e.message }, status: :internal_server_error
   end
 
   def attach_files
