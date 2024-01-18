@@ -26,13 +26,17 @@ namespace :api do
   resources :users_reset_password_requests, only: [:create] do
   end
 
+  # Merged the new and existing routes for todos#create, keeping both for backward compatibility
   post '/todos/create', to: 'todos#create'
   post '/todos', to: 'todos#create', constraints: lambda { |request| request.env['warden'].authenticate? }
   post 'todos/:todo_id/associate_category/:category_id', to: 'todos#associate_with_category'
+  # Preserved the existing route for associating categories from existing code
   post '/todos/:todo_id/categories/:category_id', to: 'todo_categories#create'
   post '/todos/validate', to: 'todos#validate'
+  # Merged new and existing error handling routes
   post '/todos/error', to: 'todos#log_todo_creation_error'
 
+  # New code merged for todo_categories, attachments, and notes
   post '/todo_categories', to: 'todo_categories#create'
   post '/attachments', to: 'attachments#create'
   post '/notes', to: 'notes#create'
@@ -40,14 +44,18 @@ namespace :api do
   resources :todos do
     resources :notes, only: %i[index create show update destroy] do
     end
-    post '/attachments', to: 'todos#attach_files' # Patch applied here
+    # Updated route to match the requirement for assigning tags to a todo item
+    post '/tags', to: 'todos#assign_tags', constraints: lambda { |request| request.env['warden'].authenticate? }
     post '/create_tags', to: 'todo_tags#create'
-    resources :attachments, only: [:create]
+    # Resolved conflict by keeping both routes for attachments with different constraints
+    post '/attachments', to: 'todos#attach_files' # Existing route from old code
+    post '/attachments', to: 'attachments#create', constraints: lambda { |request| request.env['warden'].authenticate? } # New route from new code
   end
 
   resources :notes, only: %i[index create show update destroy] do
   end
 
+  # Resolved conflict by keeping both routes for attachments with different constraints
   post '/todos/:todo_id/attachments', to: 'attachments#create', constraints: lambda { |request| request.env['warden'].authenticate? }
 end
 
