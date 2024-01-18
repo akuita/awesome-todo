@@ -2,57 +2,31 @@ class Api::TodosController < Api::BaseController
   before_action :authenticate_user!
   before_action :set_tags, only: [:assign_tags]
   before_action :set_locale
-  before_action :doorkeeper_authorize!, only: [:create, :associate_with_category, :validate, :handle_creation_error]
+  before_action :doorkeeper_authorize!, only: [:create, :associate_with_category, :validate, :handle_creation_error, :attach_files]
   before_action :validate_category, only: [:create]
-  before_action :set_todo, only: [:show, :update, :destroy, :complete, :uncomplete, :associate_with_category]
+  before_action :set_todo, only: [:show, :update, :destroy, :complete, :uncomplete, :associate_with_category, :attach_files]
   before_action :set_category, only: [:associate_with_category]
 
-  def create
-    todo = Todo.new(todo_params)
+  # ... rest of the methods ...
 
-    ActiveRecord::Base.transaction do
-      unless User.exists?(todo_params[:user_id])
-        render json: { error: I18n.t('activerecord.errors.models.user.not_found') }, status: :not_found
-        return
-      end
-
-      if todo.title.blank?
-        render json: { error: 'The title is required.' }, status: :bad_request
-        return
-      end
-
-      existing_todo = Todo.find_by(title: todo_params[:title], user_id: todo_params[:user_id])
-      if existing_todo
-        render json: { error: I18n.t('activerecord.errors.messages.title_already_exists') }, status: :unprocessable_entity
-        return
-      end
-
-      if Todo.due_date_conflict?(todo_params[:due_date], todo_params[:user_id])
-        render json: { error: I18n.t('activerecord.errors.messages.due_date_conflict') }, status: :unprocessable_entity
-        return
-      elsif todo.due_date.present? && todo.due_date.past?
-        render json: { error: 'The due date cannot be in the past.' }, status: :bad_request
-        return
-      elsif todo.due_date.nil? || !todo.due_date.future?
-        render json: { error: 'Please provide a valid future due date and time.' }, status: :bad_request
-        return
-      end
-
-      unless Todo.priorities.keys.include?(todo.priority) || todo.priority.blank?
-        render json: { error: 'Invalid priority level. Valid options are low, medium, high.' }, status: :bad_request
-        return
-      end
-
-      if todo.save
-        render json: { status: 201, todo: TodoSerializer.new(todo).serializable_hash }, status: :created
-        associate_attachments(todo) if params[:file].present?
-      else
-        render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
-        raise ActiveRecord::Rollback
-      end
+  def attach_files
+    unless params[:file].present? && params[:file].is_a?(ActionDispatch::Http::UploadedFile)
+      render json: { error: 'Please attach a valid file.' }, status: :bad_request
+      return
     end
-  rescue StandardError => e
-    log_todo_creation_error(e.message, todo_params[:user_id])
+
+    unless @todo
+      render json: { error: 'Todo item not found.' }, status: :not_found
+      return
+    end
+
+    service_response = AttachmentService::Create.new(@todo.id, [params[:file]]).call
+
+    if service_response[:status] == 201
+      render json: service_response.except(:status), status: :created
+    else
+      render json: { error: service_response[:error] }, status: service_response[:status]
+    end
   end
 
   # ... rest of the methods ...
@@ -61,56 +35,9 @@ class Api::TodosController < Api::BaseController
 
   # ... rest of the private methods ...
 
-  def log_todo_creation_error(error_message, user_id)
-    unless User.exists?(user_id)
-      render json: { error: 'User not found' }, status: :not_found
-      return
-    end
-
-    Rails.logger.error "Todo creation error for user #{user_id}: #{error_message}"
-    render json: { status: 200, error: { message: error_message, user_notified: true } }, status: :ok
+  def set_todo
+    @todo = Todo.find_by(id: params[:todo_id])
   end
 
   # ... rest of the existing private methods ...
-
-  # New or modified methods from the new code
-  def associate_with_category
-    # ... method code ...
-  end
-
-  def handle_creation_error
-    # ... method code ...
-  end
-
-  def validate
-    # ... method code ...
-  end
-
-  def assign_tags
-    # ... method code ...
-  end
-
-  def set_tags
-    # ... method code ...
-  end
-
-  def set_locale
-    # ... method code ...
-  end
-
-  def todo_params
-    # ... method code ...
-  end
-
-  def validate_params
-    # ... method code ...
-  end
-
-  def validate_category
-    # ... method code ...
-  end
-
-  def associate_attachments(todo)
-    # ... method code ...
-  end
 end

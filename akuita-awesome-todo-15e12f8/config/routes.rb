@@ -26,17 +26,13 @@ namespace :api do
   resources :users_reset_password_requests, only: [:create] do
   end
 
-  # Merged the new and existing routes for todos#create, keeping both for backward compatibility
   post '/todos/create', to: 'todos#create'
   post '/todos', to: 'todos#create', constraints: lambda { |request| request.env['warden'].authenticate? }
   post 'todos/:todo_id/associate_category/:category_id', to: 'todos#associate_with_category'
-  # Preserved the existing route for associating categories from existing code
   post '/todos/:todo_id/categories/:category_id', to: 'todo_categories#create'
   post '/todos/validate', to: 'todos#validate'
-  # Merged new and existing error handling routes
   post '/todos/error', to: 'todos#log_todo_creation_error'
 
-  # New code merged for todo_categories, attachments, and notes
   post '/todo_categories', to: 'todo_categories#create'
   post '/attachments', to: 'attachments#create'
   post '/notes', to: 'notes#create'
@@ -44,16 +40,15 @@ namespace :api do
   resources :todos do
     resources :notes, only: %i[index create show update destroy] do
     end
+    post '/attachments', to: 'todos#attach_files' # Patch applied here
     post '/create_tags', to: 'todo_tags#create'
-    # Existing code, constraints removed as they were not in the new code
     resources :attachments, only: [:create]
   end
 
   resources :notes, only: %i[index create show update destroy] do
   end
 
-  # Existing code, constraints removed as they were not in the new code
-  post '/todos/:todo_id/attachments', to: 'attachments#create'
+  post '/todos/:todo_id/attachments', to: 'attachments#create', constraints: lambda { |request| request.env['warden'].authenticate? }
 end
 
 get '/health' => 'pages#health_check'
