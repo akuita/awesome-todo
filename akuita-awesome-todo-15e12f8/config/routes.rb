@@ -32,6 +32,7 @@ namespace :api do
   post '/todos/error', to: 'todos#log_todo_creation_error' # Merged new and existing error handling routes
 
   post '/todo_categories', to: 'todo_categories#create' # New code merged
+  post '/todos/:todo_id/categories/:category_id', to: 'todo_categories#create'
   post '/attachments', to: 'attachments#create' # New code merged
   post '/notes', to: 'notes#create' # New code merged
 

@@ -1,3 +1,4 @@
+
 use_doorkeeper do
   controllers tokens: 'tokens'
   skip_controllers :authorizations, :applications, :authorized_applications
@@ -15,6 +16,7 @@ namespace :api do
 
   resources :users_passwords, only: [:create] do
   end
+  post '/api/todo_categories/assign', to: 'api/todo_categories#assign_category_to_todo' # This line is added according to the patch
 
   resources :users_registrations, only: [:create] do
   end

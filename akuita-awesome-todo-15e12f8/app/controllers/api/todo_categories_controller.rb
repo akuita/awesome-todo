@@ -1,5 +1,6 @@
+
 class Api::TodoCategoriesController < Api::BaseController
-  before_action :doorkeeper_authorize!, only: %i[create associate_todo_with_category]
+  before_action :doorkeeper_authorize!, only: %i[create assign_category_to_todo]
 
   # POST /api/todo_categories
   def create
@@ -28,8 +29,23 @@ class Api::TodoCategoriesController < Api::BaseController
     end
   end
 
-  # This method is no longer needed as 'create' now handles association
-  # def associate_todo_with_category
-  #   ...
-  # end
+  # POST /api/todo_categories/assign
+  def assign_category_to_todo
+    todo_id = params[:todo_id]
+    category_id = params[:category_id]
+
+    category = Category.find_by(id: category_id)
+    return render json: { error: 'Invalid category.' }, status: :bad_request unless category&.belongs_to_user?(current_resource_owner.id)
+
+    todo_category = TodoCategory.new(todo_id: todo_id, category_id: category_id)
+    if todo_category.save
+      render json: { status: 201, todo_category: TodoCategorySerializer.new(todo_category).serializable_hash }, status: :created
+    else
+      render json: { errors: todo_category.errors.full_messages }, status: :unprocessable_entity
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Todo or Category not found' }, status: :not_found
+  end
+
+  # ... rest of the existing methods ...
 end
