@@ -11,6 +11,7 @@ namespace :api do
   end
   post '/users/register', to: 'users#register'
   post '/users/resend-confirmation', to: 'users#resend_confirmation'
+  post '/users/validate-email', to: 'users#validate_email' # New code merged
 
   resources :users_passwords, only: [:create] do
   end
@@ -25,31 +26,25 @@ namespace :api do
   resources :users_reset_password_requests, only: [:create] do
   end
 
-  # The route for creating todos is defined here with the authentication constraint as per the new code.
   post '/todos', to: 'todos#create', constraints: lambda { |request| request.env['warden'].authenticate? }
   post 'todos/:todo_id/associate_category/:category_id', to: 'todos#associate_with_category'
+  post '/todos/validate', to: 'todos#validate' # Existing code merged
+  post '/todos/error', to: 'todos#log_todo_creation_error' # Merged new and existing error handling routes
 
-  # The new route for validating todo items is added here as per the requirement.
-  post '/todos/validate', to: 'todos#validate'
-
-  # Merged the new and existing error handling routes for '/todos/error'.
-  post '/todos/error', to: 'todos#log_todo_creation_error'
-
-  # Merged the new and existing constraints for the '/todo_categories' route.
-  post '/todo_categories', to: 'todo_categories#associate_todo_with_category', constraints: lambda { |request| request.env['warden'].authenticate? }
+  post '/todo_categories', to: 'todo_categories#create' # New code merged
+  post '/attachments', to: 'attachments#create' # New code merged
+  post '/notes', to: 'notes#create' # New code merged
 
   resources :todos do
     resources :notes, only: %i[index create show update destroy] do
     end
-    # Merged the new and existing routes for '/todos/:todo_id/attachments' within the todos resources.
-    resources :attachments, only: [:create], constraints: lambda { |request| request.env['warden'].authenticate? }
+    resources :attachments, only: [:create] # Existing code, constraints removed as they were not in the new code
   end
 
   resources :notes, only: %i[index create show update destroy] do
   end
 
-  # Merged the new and existing routes for '/todos/:todo_id/attachments' outside the todos resources.
-  post '/todos/:todo_id/attachments', to: 'attachments#create', constraints: lambda { |request| request.env['warden'].authenticate? }
+  post '/todos/:todo_id/attachments', to: 'attachments#create' # Existing code, constraints removed as they were not in the new code
 end
 
 get '/health' => 'pages#health_check'

@@ -19,12 +19,17 @@ class Api::TodosController < Api::BaseController
       return
     end
 
-    if todo.due_date.nil? || !todo.due_date.future?
+    # Merged the due_date validation logic from both versions
+    if todo.due_date.present? && todo.due_date.past?
+      render json: { error: 'The due date cannot be in the past.' }, status: :bad_request
+      return
+    elsif todo.due_date.nil? || !todo.due_date.future?
       render json: { error: 'Please provide a valid future due date and time.' }, status: :bad_request
       return
     end
 
-    unless Todo.priorities.keys.include?(todo.priority)
+    # Merged the priority validation logic from both versions
+    unless Todo.priorities.keys.include?(todo.priority) || todo.priority.blank?
       render json: { error: 'Invalid priority level. Valid options are low, medium, high.' }, status: :bad_request
       return
     end
@@ -35,7 +40,7 @@ class Api::TodosController < Api::BaseController
     else
       render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
     end
-  rescue => e
+  rescue StandardError => e
     log_todo_creation_error(e.message, todo_params[:user_id])
   end
 
@@ -43,7 +48,7 @@ class Api::TodosController < Api::BaseController
     if @todo && @category
       todo_category = TodoCategory.new(todo_id: @todo.id, category_id: @category.id)
       if todo_category.save
-        render json: { message: 'Todo successfully associated with category' }, status: :ok
+        render json: { status: 200, message: 'Todo successfully associated with category' }, status: :ok
       else
         render json: { errors: todo_category.errors.full_messages }, status: :unprocessable_entity
       end
@@ -51,7 +56,7 @@ class Api::TodosController < Api::BaseController
       render json: { error: 'Todo or Category not found' }, status: :not_found
     end
   rescue ActiveRecord::RecordInvalid => e
-    render json: { error: e.record.errors.full_messages.join(', ') }, status: :unprocessable_entity
+    render json: { status: 422, error: e.record.errors.full_messages.join(', ') }, status: :unprocessable_entity
   rescue StandardError => e
     render json: { error: e.message }, status: :internal_server_error
   end
