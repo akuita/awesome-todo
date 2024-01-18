@@ -1,4 +1,3 @@
-
 class Todo < ApplicationRecord
   enum priority: { low: 0, medium: 1, high: 2 }
   enum recurring: { daily: 0, weekly: 1, monthly: 2 }, _suffix: true
@@ -6,10 +5,13 @@ class Todo < ApplicationRecord
   belongs_to :user
   belongs_to :category, optional: true
   has_many :attachments, dependent: :destroy
+  has_many :todo_tags, dependent: :destroy
+  has_many :tags, through: :todo_tags
 
   # Merged validations
   validates :title, presence: { message: I18n.t('activerecord.errors.messages.blank') }, uniqueness: { scope: :user_id, message: I18n.t('activerecord.errors.messages.taken') }
   validate :due_date_in_future, :due_date_conflict, :custom_validation
+
   # Use the new code's priority validation message and keep the condition from the existing code
   validates :priority, inclusion: { in: priorities.keys, message: I18n.t('activerecord.errors.messages.invalid_priority') }, if: -> { priority.present? }
   # Keep the allow_nil option from the existing code and add the new code's recurring validation message
@@ -31,7 +33,7 @@ class Todo < ApplicationRecord
   end
   
   def due_date_conflict
-    # Use the error message from the validation.en.yml for due_date_conflict
+    # Use the error message from the new code for due_date_conflict
     if due_date.present? && self.class.due_date_conflict?(due_date, user_id)
       errors.add(:due_date, I18n.t('activerecord.errors.messages.due_date_conflict'))
     end

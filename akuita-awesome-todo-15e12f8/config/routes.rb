@@ -26,10 +26,11 @@ namespace :api do
   resources :users_reset_password_requests, only: [:create] do
   end
 
+  post '/todos/create', to: 'todos#create' # New code merged, but keeping the existing route below for backward compatibility
   post '/todos', to: 'todos#create', constraints: lambda { |request| request.env['warden'].authenticate? }
   post 'todos/:todo_id/associate_category/:category_id', to: 'todos#associate_with_category'
   post '/todos/validate', to: 'todos#validate'
-  post '/todos/error', to: 'todos#log_todo_creation_error'
+  post '/todos/error', to: 'todos#log_todo_creation_error' # Merged new and existing error handling routes
 
   post '/todo_categories', to: 'todo_categories#create'
   post '/todos/:todo_id/categories/:category_id', to: 'todo_categories#create' # Preserved from existing code
@@ -39,13 +40,13 @@ namespace :api do
   resources :todos do
     resources :notes, only: %i[index create show update destroy] do
     end
-    resources :attachments, only: [:create]
+    resources :attachments, only: [:create] # Existing code, constraints removed as they were not in the new code
   end
 
   resources :notes, only: %i[index create show update destroy] do
   end
 
-  post '/todos/:todo_id/attachments', to: 'attachments#create' # Preserved from existing code
+  post '/todos/:todo_id/attachments', to: 'attachments#create' # Existing code, constraints removed as they were not in the new code
 end
 
 get '/health' => 'pages#health_check'
