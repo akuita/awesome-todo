@@ -1,3 +1,4 @@
+
 class Api::TodosController < Api::BaseController
   before_action :authenticate_user!
   before_action :set_locale
@@ -22,6 +23,17 @@ class Api::TodosController < Api::BaseController
     # Merged the due_date validation logic from both versions
     if todo.due_date.present? && todo.due_date.past?
       render json: { error: 'The due date cannot be in the past.' }, status: :bad_request
+      return
+    end
+
+    existing_todo = Todo.find_by(title: todo_params[:title], user_id: todo_params[:user_id])
+    if existing_todo
+      render json: { error: I18n.t('activerecord.errors.messages.title_already_exists') }, status: :unprocessable_entity
+      return
+    end
+
+    if Todo.due_date_conflict?(todo_params[:due_date], todo_params[:user_id])
+      render json: { error: I18n.t('activerecord.errors.messages.due_date_conflict') }, status: :unprocessable_entity
       return
     elsif todo.due_date.nil? || !todo.due_date.future?
       render json: { error: 'Please provide a valid future due date and time.' }, status: :bad_request
