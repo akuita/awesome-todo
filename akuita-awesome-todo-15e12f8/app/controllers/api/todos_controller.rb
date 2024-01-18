@@ -7,7 +7,50 @@ class Api::TodosController < Api::BaseController
   before_action :validate_category, only: [:create]
   before_action :set_category, only: [:associate_with_category]
 
-  # ... other existing methods ...
+  def create
+    todo = Todo.new(todo_params)
+
+    Todo.transaction do
+      unless User.exists?(id: todo_params[:user_id])
+        render json: { error: I18n.t('activerecord.errors.models.user.not_found') }, status: :not_found
+        return
+      end
+
+      if todo.title.blank?
+        render json: { error: 'The title is required.' }, status: :bad_request
+        return
+      end
+      
+      existing_todo = Todo.find_by(title: todo_params[:title], user_id: todo_params[:user_id])
+      if existing_todo
+        render json: { error: I18n.t('activerecord.errors.messages.title_already_exists') }, status: :unprocessable_entity
+        return
+      end
+
+      if todo.due_date.present? && todo.due_date.past?
+        render json: { error: 'Please provide a valid future due date and time.' }, status: :bad_request
+        return
+      elsif todo.due_date.nil? || !todo.due_date.future?
+        render json: { error: 'Please provide a valid future due date and time.' }, status: :bad_request
+        return
+      end
+      
+      unless Todo.priorities.keys.include?(todo.priority) || todo.priority.blank?
+        render json: { error: 'Invalid priority level. Valid options are low, medium, high.' }, status: :bad_request
+        return
+      end
+
+      if todo.save
+        render json: { status: 201, todo: TodoSerializer.new(todo).serializable_hash }, status: :created
+        associate_attachments(todo) if params[:file].present?
+      else        
+        render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
+        raise ActiveRecord::Rollback
+      end
+    end
+  rescue StandardError => e
+    log_todo_creation_error(e.message, todo_params[:user_id])
+  end
 
   def assign_tags
     authenticate_user!
@@ -88,7 +131,7 @@ class Api::TodosController < Api::BaseController
   end
 
   def log_todo_creation_error(error_message, user_id)
-    unless User.exists?(user_id)
+    unless User.exists?(id: user_id)
       render json: { error: 'User not found' }, status: :not_found
       return
     end
@@ -98,7 +141,7 @@ class Api::TodosController < Api::BaseController
   end
 
   def todo_params
-    # ... method code ...
+    params.require(:todo).permit(:title, :description, :due_date, :priority, :recurring, :user_id)
   end
 
   def validate_params

@@ -29,13 +29,17 @@ namespace :api do
 
   resources :users_verify_reset_password_requests, only: [:create] do
   end
-  post '/api/todos/validate', to: 'api/todos#validate' # This line is added according to the requirement
+  post '/todos/validate', to: 'todos#validate'
 
   resources :users_reset_password_requests, only: [:create] do
   end
 
-  post '/api/todos', to: 'api/todos#create'
+  # The following line is updated to ensure the POST request to /api/todos is routed to the todos#create action
+  # The new code has '/api/todos' which is redundant since we are already in the 'api' namespace
+  # The existing code has '/api/todos' which is incorrect for the same reason
+  # We will use the 'create_todo' path from the new code and remove the redundant '/api' prefix
   post '/todos', to: 'todos#create', as: 'create_todo'
+
   post 'todos/:todo_id/associate_category/:category_id', to: 'notes#associate_with_category'
   post '/notes', to: 'notes#create'
   resources :notes, only: %i[index create show update destroy] do

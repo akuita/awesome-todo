@@ -8,10 +8,10 @@ class Todo < ApplicationRecord
   has_many :todo_tags, dependent: :destroy
   has_many :tags, through: :todo_tags
 
-  validates :title, presence: { message: I18n.t('activerecord.errors.messages.blank') }, uniqueness: { scope: :user_id, message: I18n.t('activerecord.errors.messages.taken') }
-  validate :due_date_in_future, :due_date_conflict, :custom_validation
+  validates :title, presence: { message: "The title is required." }, uniqueness: { scope: :user_id, message: I18n.t('activerecord.errors.messages.taken') }
+  validate :due_date_in_future, :due_date_conflict
 
-  validates :priority, inclusion: { in: priorities.keys, message: I18n.t('activerecord.errors.messages.invalid_priority') }, if: -> { priority.present? }
+  validates :priority, inclusion: { in: priorities.keys, message: "Invalid priority level. Valid options are low, medium, high." }, if: -> { priority.present? }
   validates :recurring, inclusion: { in: recurrings.keys, message: I18n.t('activerecord.errors.messages.invalid_recurring') }, allow_nil: true
   validates :user_id, presence: true
   validate :user_exists
@@ -24,7 +24,7 @@ class Todo < ApplicationRecord
 
   def due_date_in_future
     if due_date.present? && due_date < Time.current
-      errors.add(:due_date, I18n.t('activerecord.errors.messages.datetime_in_future'))
+      errors.add(:due_date, "Please provide a valid future due date and time.")
     end
   end
   
@@ -36,12 +36,5 @@ class Todo < ApplicationRecord
 
   def user_exists
     errors.add(:user_id, "User not found.") unless User.exists?(self.user_id)
-  end
-
-  def custom_validation
-    unless title.present?
-      errors.add(:title, I18n.t('activerecord.errors.messages.blank'))
-    end
-    # Add more custom validations as needed
   end
 end
