@@ -1,5 +1,6 @@
 class Api::TodosController < Api::BaseController
   before_action :authenticate_user!
+  before_action :set_tags, only: [:assign_tags]
   before_action :set_locale
   before_action :doorkeeper_authorize!, only: [:create, :associate_with_category, :validate, :handle_creation_error]
   before_action :validate_category, only: [:create]
@@ -29,6 +30,9 @@ class Api::TodosController < Api::BaseController
       if Todo.due_date_conflict?(todo_params[:due_date], todo_params[:user_id])
         render json: { error: I18n.t('activerecord.errors.messages.due_date_conflict') }, status: :unprocessable_entity
         return
+      elsif todo.due_date.present? && todo.due_date.past?
+        render json: { error: 'The due date cannot be in the past.' }, status: :bad_request
+        return
       elsif todo.due_date.nil? || !todo.due_date.future?
         render json: { error: 'Please provide a valid future due date and time.' }, status: :bad_request
         return
@@ -46,9 +50,9 @@ class Api::TodosController < Api::BaseController
         render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
         raise ActiveRecord::Rollback
       end
-    rescue StandardError => e
-      log_todo_creation_error(e.message, todo_params[:user_id])
     end
+  rescue StandardError => e
+    log_todo_creation_error(e.message, todo_params[:user_id])
   end
 
   # ... rest of the methods ...
@@ -69,4 +73,44 @@ class Api::TodosController < Api::BaseController
 
   # ... rest of the existing private methods ...
 
+  # New or modified methods from the new code
+  def associate_with_category
+    # ... method code ...
+  end
+
+  def handle_creation_error
+    # ... method code ...
+  end
+
+  def validate
+    # ... method code ...
+  end
+
+  def assign_tags
+    # ... method code ...
+  end
+
+  def set_tags
+    # ... method code ...
+  end
+
+  def set_locale
+    # ... method code ...
+  end
+
+  def todo_params
+    # ... method code ...
+  end
+
+  def validate_params
+    # ... method code ...
+  end
+
+  def validate_category
+    # ... method code ...
+  end
+
+  def associate_attachments(todo)
+    # ... method code ...
+  end
 end

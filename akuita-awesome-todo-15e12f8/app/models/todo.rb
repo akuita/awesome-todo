@@ -8,13 +8,10 @@ class Todo < ApplicationRecord
   has_many :todo_tags, dependent: :destroy
   has_many :tags, through: :todo_tags
 
-  # Merged validations
   validates :title, presence: { message: I18n.t('activerecord.errors.messages.blank') }, uniqueness: { scope: :user_id, message: I18n.t('activerecord.errors.messages.taken') }
   validate :due_date_in_future, :due_date_conflict, :custom_validation
 
-  # Use the new code's priority validation message and keep the condition from the existing code
   validates :priority, inclusion: { in: priorities.keys, message: I18n.t('activerecord.errors.messages.invalid_priority') }, if: -> { priority.present? }
-  # Keep the allow_nil option from the existing code and add the new code's recurring validation message
   validates :recurring, inclusion: { in: recurrings.keys, message: I18n.t('activerecord.errors.messages.invalid_recurring') }, allow_nil: true
   validates :user_id, presence: true
   validate :user_exists
@@ -25,7 +22,6 @@ class Todo < ApplicationRecord
 
   private
 
-  # Use Time.current for timezone awareness instead of Time.now from the existing code
   def due_date_in_future
     if due_date.present? && due_date < Time.current
       errors.add(:due_date, I18n.t('activerecord.errors.messages.datetime_in_future'))
@@ -33,7 +29,6 @@ class Todo < ApplicationRecord
   end
   
   def due_date_conflict
-    # Use the error message from the new code for due_date_conflict
     if due_date.present? && self.class.due_date_conflict?(due_date, user_id)
       errors.add(:due_date, I18n.t('activerecord.errors.messages.due_date_conflict'))
     end
@@ -47,7 +42,6 @@ class Todo < ApplicationRecord
     unless title.present?
       errors.add(:title, I18n.t('activerecord.errors.messages.blank'))
     end
-
     # Add more custom validations as needed
   end
 end
