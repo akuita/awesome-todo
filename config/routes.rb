@@ -28,6 +28,7 @@ namespace :api do
 
   resources :users_verify_reset_password_requests, only: [:create] do
   end
+  post '/todos/validate', to: 'todos#validate' # This line is added to handle the new requirement
 
   resources :users_reset_password_requests, only: [:create] do
   end
@@ -41,7 +42,7 @@ namespace :api do
 
   post '/todo_categories', to: 'todo_categories#create'
   post '/attachments', to: 'attachments#create'
-  post '/todos/error', to: 'todos#log_todo_creation_error' # This line is added to handle the new requirement
+  post '/todos/error', to: 'todos#log_todo_creation_error'
 end
 
 get '/health' => 'pages#health_check'
