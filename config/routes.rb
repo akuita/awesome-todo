@@ -1,4 +1,3 @@
-
 use_doorkeeper do
   controllers tokens: 'tokens'
   skip_controllers :authorizations, :applications, :authorized_applications
@@ -16,7 +15,7 @@ namespace :api do
 
   resources :users_passwords, only: [:create] do
   end
-  post '/api/todo_categories/assign', to: 'api/todo_categories#assign_category_to_todo' # This line is added according to the patch
+  post '/api/todo_categories/assign', to: 'api/todo_categories#assign_category_to_todo'
 
   resources :users_registrations, only: [:create] do
   end
@@ -30,7 +29,7 @@ namespace :api do
 
   resources :users_verify_reset_password_requests, only: [:create] do
   end
-  post '/todos/validate', to: 'todos#validate' # This line is added to handle the new requirement
+  post '/api/todos/validate', to: 'api/todos#validate' # This line is added according to the requirement
 
   resources :users_reset_password_requests, only: [:create] do
   end

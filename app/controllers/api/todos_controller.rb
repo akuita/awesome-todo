@@ -1,4 +1,3 @@
-
 class Api::TodosController < ApplicationController
   before_action :set_todo, only: [:associate_with_category]
   before_action :set_category, only: [:associate_with_category]
@@ -21,6 +20,36 @@ class Api::TodosController < ApplicationController
     else
       render json: { error: todo_category.errors.full_messages.join(', ') }, status: :unprocessable_entity
     end
+  end
+
+  # POST /api/todos/validate
+  def validate
+    title = params[:title]
+    due_date = params[:due_date]
+
+    if title.blank? || due_date.blank?
+      render json: { error: 'Title and due date are required.' }, status: :bad_request
+      return
+    end
+
+    begin
+      due_date = DateTime.parse(due_date)
+    rescue ArgumentError
+      render json: { error: 'Invalid due date format.' }, status: :unprocessable_entity
+      return
+    end
+
+    if current_user.todos.exists?(title: title)
+      render json: { error: 'A todo with this title already exists.' }, status: :unprocessable_entity
+      return
+    end
+
+    if current_user.todos.where.not(id: params[:id]).exists?(due_date: due_date)
+      render json: { error: 'This due date conflicts with another todo.' }, status: :unprocessable_entity
+      return
+    end
+
+    render json: { message: 'Todo item details are valid.' }, status: :ok
   end
 
   private
