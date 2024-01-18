@@ -4,8 +4,9 @@
 class TodoErrorLoggingJob < ApplicationJob
   queue_as :default
 
-  def perform(error_message, *args)
-    Rails.logger.error("Todo creation error: #{error_message}, Additional Info: #{args.inspect}")
+  def perform(error_message, attachment_info = nil, *args)
+    error_details = attachment_info ? "Attachment Info: #{attachment_info.inspect}, " : ""
+    Rails.logger.error("Todo creation error: #{error_message}, #{error_details}Additional Info: #{args.inspect}")
   end
 end
 

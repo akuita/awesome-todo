@@ -1,4 +1,3 @@
-
 class TodoSerializer < ActiveModel::Serializer
   attributes :id, :title, :description, :due_date, :priority, :recurring
 
@@ -10,11 +9,11 @@ class TodoSerializer < ActiveModel::Serializer
     object.category.present?
   end
 
-  def attachments_present?
-    object.attachments.any?
-  end
-
   def categories_present?
     object.categories.any?
+  end
+
+  def attachments_present?
+    object.attachments.any?
   end
 end

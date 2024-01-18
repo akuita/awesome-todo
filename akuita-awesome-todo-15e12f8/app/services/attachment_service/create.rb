@@ -1,3 +1,4 @@
+
 module AttachmentService
   class Create < BaseService
     def initialize(todo_id, file)
@@ -13,6 +14,7 @@ module AttachmentService
       return { error: 'Todo not found.', status: 400 } if todo.nil?
 
       attachment = Attachment.new(todo_id: @todo_id, file: @file)
+      attachment.file.attach(@file) # Patched line: Attach the file to the attachment
 
       unless attachment.valid?
         return { error: attachment.errors.full_messages.join(', '), status: 422 }
@@ -20,11 +22,16 @@ module AttachmentService
 
       # Validate file content type and size
       allowed_content_types = ['image/png', 'image/jpg', 'image/jpeg', 'application/pdf']
-      unless allowed_content_types.include?(@file.content_type)
-        return { error: 'Invalid file type. Allowed types are: PNG, JPG, JPEG, PDF.', status: 422 }
+      if @file.respond_to?(:content_type) # Patched line: Check if @file responds to content_type
+        unless allowed_content_types.include?(@file.content_type)
+          return { error: 'Invalid file type. Allowed types are: PNG, JPG, JPEG, PDF.', status: 422 }
+        end
       end
-      if @file.size > 10.megabytes
-        return { error: 'File size exceeds the allowed limit of 10MB.', status: 422 }
+
+      if @file.respond_to?(:size) # Patched line: Check if @file responds to size
+        if @file.size > 10.megabytes
+          return { error: 'File size exceeds the allowed limit of 10MB.', status: 422 }
+        end
       end
 
       if attachment.save
