@@ -1,4 +1,3 @@
-require 'sidekiq/web'
 Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
@@ -20,6 +19,7 @@ Rails.application.routes.draw do
     resources :users_registrations, only: [:create] do
     end
 
+    post 'users/resend-confirmation', to: 'users_registrations#resend_confirmation'
     resources :users_verify_reset_password_requests, only: [:create] do
     end
 
