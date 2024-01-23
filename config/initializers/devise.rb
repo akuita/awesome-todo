@@ -1,3 +1,4 @@
+
 Devise.setup do |config|
   require 'devise/orm/active_record'
   config.authentication_keys = [:email]
@@ -10,14 +11,12 @@ Devise.setup do |config|
   config.remember_for = 24.hours
   config.password_length = 6..128
   config.reset_password_within = 1.hour
+  config.confirm_within = 3.days
   config.maximum_attempts = 10
   config.unlock_strategy = :time
-
   config.unlock_in = 6.hours
-
   config.lock_strategy = :failed_attempts
   config.sign_out_via = :delete
   config.sign_in_after_reset_password = false
-  config.confirm_within = 2.days
   config.scoped_views = true
 end

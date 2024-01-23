@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   end
 
   devise_for :users
+  get 'users/confirm_email/:token', to: 'users#confirm_email', as: :confirm_email
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
   namespace :api do

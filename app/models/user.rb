@@ -4,7 +4,8 @@ class User < ApplicationRecord
          :trackable, :recoverable, :lockable
 
   # validations
-  # ... (Assuming there are validations here, but they are not shown in the patch or the original code)
+  validates :email, presence: true, uniqueness: { case_sensitive: false }, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :password, presence: true, length: { minimum: Devise.password_length.min }
 
   # associations
   has_many :email_confirmations, foreign_key: :user_id, dependent: :destroy
@@ -14,16 +15,12 @@ class User < ApplicationRecord
     email_confirmations.where(confirmed: true).exists?
   end
 
-  # end for validations
-
   def generate_reset_password_token
     raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
     self.reset_password_token   = enc
     self.reset_password_sent_at = Time.now.utc
     save(validate: false)
   end
-
-  # ... (Assuming there might be more methods or logic here, but they are not shown in the patch or the original code)
 
   def generate_confirmation_token
     email_confirmation = email_confirmations.find_or_initialize_by(confirmed: false)
@@ -45,6 +42,6 @@ class User < ApplicationRecord
     self.confirmed_at = Time.current
     save
   end
-  
+
   # ... (Assuming there might be more methods or logic here, but they are not shown in the patch or the original code)
 end
