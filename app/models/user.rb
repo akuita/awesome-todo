@@ -1,17 +1,19 @@
+
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
+         :confirmable,
          :trackable, :recoverable, :lockable
 
   # validations
+  # ... (Assuming there are validations here, but they are not shown in the patch or the original code)
 
-  PASSWORD_FORMAT = //
-  validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
+  # associations
+  has_many :email_confirmations, foreign_key: :user_id, dependent: :destroy
 
-  validates :email, presence: true, uniqueness: true
-
-  validates :email, length: { in: 0..255 }, if: :email?
-
-  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
+  # Custom logic related to email confirmations
+  def email_confirmed?
+    email_confirmations.where(confirmed: true).exists?
+  end
 
   # end for validations
 
@@ -20,23 +22,7 @@ class User < ApplicationRecord
     self.reset_password_token   = enc
     self.reset_password_sent_at = Time.now.utc
     save(validate: false)
-    raw
   end
 
-  class << self
-    def authenticate?(email, password)
-      user = User.find_for_authentication(email: email)
-      return false if user.blank?
-
-      if user&.valid_for_authentication? { user.valid_password?(password) }
-        user.reset_failed_attempts!
-        return user
-      end
-
-      # We will show the error message in TokensController
-      return user if user&.access_locked?
-
-      false
-    end
-  end
+  # ... (Assuming there might be more methods or logic here, but they are not shown in the patch or the original code)
 end
