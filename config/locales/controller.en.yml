@@ -8,9 +8,11 @@ en:
     '403': forbidden
     '404': not found
     '422': unprocessable
+    '500': internal server error
     email_confirmation:
       success: Your email has been successfully confirmed.
       invalid_token: The confirmation token is invalid.
       expired_token: The confirmation token has expired.
       already_confirmed: Your email is already confirmed.
-    '500': internal server error
+    resend_wait_error: "Please wait a few minutes before requesting another confirmation email."
+    resend_success: "Confirmation email has been resent successfully."

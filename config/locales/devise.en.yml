@@ -1,7 +1,9 @@
+
 en:
   activerecord:
     attributes:
       user:
+        resend_confirmation: 'Resend confirmation'
         confirmation_sent_at: Confirmation sent at
         confirmation_token: Confirmation token
         confirmed_at: Confirmed at
@@ -38,6 +40,7 @@ en:
       send_paranoid_instructions: If your email address exists in our database, you will receive an email with instructions for how to confirm your email address in a few minutes.
     failure:
       already_authenticated: You are already signed in.
+      resend_confirmation_too_soon: 'You have recently requested a confirmation email. Please wait a few minutes before trying again.'
       inactive: Your account is not activated yet.
       invalid: Invalid %{authentication_keys} or password.
       last_attempt: You have one more attempt before your account is locked.
@@ -46,6 +49,8 @@ en:
       timeout: Your session expired. Please sign in again to continue.
       unauthenticated: You need to sign in or sign up before continuing.
       unconfirmed: You have to confirm your email address before continuing.
+    success:
+      resend_confirmation_email_success: 'A new confirmation email has been sent to your email address. Please check your inbox.'
     mailer:
       confirmation_instructions:
         action: Verify email
