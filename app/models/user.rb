@@ -25,4 +25,14 @@ class User < ApplicationRecord
   end
 
   # ... (Assuming there might be more methods or logic here, but they are not shown in the patch or the original code)
+
+  def confirm_email
+    return false if confirmed_at.present?
+
+    self.confirmed_at = Time.current
+    self.email_confirmed = true
+    save
+  end
+  
+  # ... (Assuming there might be more methods or logic here, but they are not shown in the patch or the original code)
 end

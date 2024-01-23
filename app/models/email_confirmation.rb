@@ -1,7 +1,7 @@
 class EmailConfirmation < ApplicationRecord
   belongs_to :user
 
-  validates :token, presence: true, uniqueness: true
+  validates :token, presence: true, uniqueness: { case_sensitive: false }
   validates :confirmed, inclusion: { in: [true, false] }
   validates :expires_at, presence: true
   validate :expiration_date_cannot_be_in_the_past
