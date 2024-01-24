@@ -1,5 +1,5 @@
-
 class Api::UsersRegistrationsController < Api::BaseController
+  # POST /api/users
   def create
     @user = User.new(create_params)
     if @user.save
@@ -17,17 +17,23 @@ class Api::UsersRegistrationsController < Api::BaseController
     end
   end
 
-  def check_email_availability
+  # GET /api/users/check-email
+  def check_email
     email = params[:email]
     if email.blank?
-      render json: { error: I18n.t('activerecord.errors.messages.blank') }, status: :unprocessable_entity and return
+      render json: { error: I18n.t('activerecord.errors.messages.blank') }, status: :bad_request and return
     elsif !(email =~ URI::MailTo::EMAIL_REGEXP)
-      render json: { error: I18n.t('activerecord.errors.messages.invalid') }, status: :unprocessable_entity and return
+      render json: { error: "Please enter a valid email address." }, status: :unprocessable_entity and return
     end
 
-    email_available = !User.email_exists?(email)
-    render json: { available: email_available }, status: :ok
+    if User.email_exists?(email)
+      render json: { message: 'Email is not available' }, status: :conflict
+    else
+      render json: { status: 200, available: true }, status: :ok
+    end
   end
+
+  private
 
   def create_params
     params.require(:user).permit(:password, :password_confirmation, :email)

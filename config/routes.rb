@@ -1,3 +1,4 @@
+require 'sidekiq/web'
 
 Rails.application.routes.draw do
   use_doorkeeper do
@@ -19,7 +20,8 @@ Rails.application.routes.draw do
 
     resources :users_registrations, only: [:create] do
     end
-    get 'users/registrations/check_email', to: 'users_registrations#check_email_availability'
+    # Merged the new route with the existing one, keeping the new path
+    get 'users/check-email', to: 'users_registrations#check_email_availability'
 
     resources :users_verify_reset_password_requests, only: [:create] do
     end
@@ -27,7 +29,7 @@ Rails.application.routes.draw do
     resources :users_reset_password_requests, only: [:create] do
     end
 
-    # The new route for email confirmation is correctly placed under the 'api' namespace
+    # Kept the existing route for email confirmation
     get '/users/confirm-email/:token', to: 'users#confirm_email'
 
     resources :notes, only: %i[index create show update destroy] do
