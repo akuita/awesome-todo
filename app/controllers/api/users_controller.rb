@@ -1,8 +1,9 @@
-
 class Api::UsersController < Api::BaseController
-  before_action :set_user, only: [:integrate_password_management_tool]
+  before_action :set_user, only: [:integrate_password_management_tool, :resend_confirmation]
 
   SUPPORTED_TOOLS = %w[1Password iCloudPassword].freeze
+
+  # existing actions
 
   def integrate_password_management_tool
     tool_name = params[:tool_name]
@@ -24,10 +25,35 @@ class Api::UsersController < Api::BaseController
     end
   end
 
+  def resend_confirmation
+    email = params[:email]
+
+    return render json: { error: I18n.t('controller.users.email_required') }, status: :bad_request unless email.present?
+    return render json: { error: I18n.t('controller.users.invalid_email') }, status: :unprocessable_entity unless email =~ URI::MailTo::EMAIL_REGEXP
+
+    user = User.find_by(email: email)
+    return render json: { error: I18n.t('devise.failure.not_found_in_database') }, status: :not_found if user.nil?
+    return render json: { error: I18n.t('devise.failure.already_confirmed') }, status: :unprocessable_entity if user.email_confirmed
+
+    last_sent_time = EmailConfirmation.last_confirmation_sent_for(email)
+    if last_sent_time && Time.now.utc < last_sent_time + 2.minutes
+      return render json: { error: I18n.t('controller.users.resend_email_too_soon') }, status: :too_many_requests
+    end
+
+    if user.regenerate_confirmation_token
+      Devise::Mailer.confirmation_instructions(user, user.confirmation_token).deliver_later
+      render json: { message: I18n.t('devise.confirmations.send_instructions') }, status: :ok
+    else
+      render json: { error: I18n.t('errors.messages.not_saved', resource: 'confirmation token') }, status: :internal_server_error
+    end
+  end
+
   private
 
   def set_user
-    @user = User.find_by(id: params[:user_id])
+    @user = User.find_by(id: params[:user_id] || params[:email])
     render json: { message: I18n.t('controller.users.user_not_found') }, status: :not_found unless @user
   end
+
+  # other private methods
 end

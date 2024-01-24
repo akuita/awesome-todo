@@ -1,3 +1,4 @@
+
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
@@ -25,6 +26,20 @@ class User < ApplicationRecord
     self.reset_password_sent_at = Time.now.utc
     save(validate: false)
     raw
+  end
+
+  def regenerate_confirmation_token
+    loop do
+      raw, enc = Devise.token_generator.generate(self.class, :confirmation_token)
+      unless EmailConfirmation.exists?(token: enc)
+        self.email_confirmation.update(
+          token: enc,
+          confirmed: false,
+          expires_at: 24.hours.from_now
+        )
+        break
+      end
+    end
   end
 
   class << self

@@ -8,6 +8,7 @@ en:
     '403': forbidden
     '404': not found
     '422': unprocessable
+    '429': You must wait a bit longer before requesting another confirmation email.
     '500': internal server error
   password_management_integration:
     success: "Password management tool integrated successfully."

@@ -36,6 +36,7 @@ en:
         resend_confirmation_instructions: Resend confirmation instructions
       send_instructions: You will receive an email with instructions for how to confirm your email address in a few minutes.
       send_paranoid_instructions: If your email address exists in our database, you will receive an email with instructions for how to confirm your email address in a few minutes.
+      resend_instructions: Please check your email for the new confirmation instructions.
     failure:
       already_authenticated: You are already signed in.
       inactive: Your account is not activated yet.
@@ -53,6 +54,7 @@ en:
         instruction: Thanks for registering an account on Jitera! Before we get started, we just need to confirm that this is you.
         instruction_2: "Click below to verify your email address:"
         validity: This link is only valid for the next 24 hours.
+        resend_subject: Resend confirmation instructions for Jitera
         subject: Verify email address for Jitera
       email_changed:
         greeting: Hello %{recipient}!
