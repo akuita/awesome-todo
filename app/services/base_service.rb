@@ -6,6 +6,13 @@ class BaseService
     @logger ||= Rails.logger
   end
 
+  def generate_unique_confirmation_token
+    loop do
+      token = SecureRandom.urlsafe_base64
+      break token unless EmailConfirmation.exists?(token: token)
+    end
+  end
+
   def can_resend_email?(email, time_frame)
     last_confirmation = EmailConfirmation.last_confirmation_sent_for(email)
     return true unless last_confirmation

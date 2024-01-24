@@ -1,4 +1,3 @@
-
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
@@ -8,8 +7,13 @@ class User < ApplicationRecord
   has_many :password_management_integrations
 
   # validations
+  PASSWORD_FORMAT = /\A
+    (?=.*\d)           # Must contain a digit
+    (?=.*[a-z])        # Must contain a lower case character
+    (?=.*[A-Z])        # Must contain an upper case character
+    (?=.*[[:^alnum:]]) # Must contain a symbol
+  \z/x
 
-  PASSWORD_FORMAT = //
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
 
   validates :email, presence: true, uniqueness: true
@@ -19,6 +23,8 @@ class User < ApplicationRecord
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
 
   # end for validations
+  validates_confirmation_of :password, if: -> { new_record? || password.present? }
+  validates_presence_of :password, :password_confirmation, if: -> { new_record? || password.present? }
 
   def generate_reset_password_token
     raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)

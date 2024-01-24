@@ -1,4 +1,3 @@
----
 en:
   common:
     '200': success
@@ -8,8 +7,15 @@ en:
     '403': forbidden
     '404': not found
     '422': unprocessable
-    '429': You must wait a bit longer before requesting another confirmation email.
+    '429': too many requests  # This is the new code, replacing the specific message about confirmation emails
     '500': internal server error
+  users_registrations:
+    account_creation_success: Your account has been successfully created.
+    email_confirmation_success: Your email has been successfully confirmed.
+    email_already_used: The email you entered is already in use.
+    resend_confirmation_limit: You can only request a new confirmation email every 2 minutes.
+    resend_confirmation_success: A new confirmation email has been sent to your email address.
+    account_creation_error: There was an error creating your account. Please try again.
   password_management_integration:
     success: "Password management tool integrated successfully."
     user_not_found: "User not found."
@@ -17,4 +23,4 @@ en:
     validation_error: "Validation error occurred."
     save_failed: "Failed to save password management integration."
     integration_data_encryption_failed: "Failed to encrypt integration data."
-    '500': internal server error
+    '500': internal server error  # This is redundant and can be removed because it's already declared in common.
