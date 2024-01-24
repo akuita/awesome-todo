@@ -25,6 +25,7 @@ Rails.application.routes.draw do
     resources :users_reset_password_requests, only: [:create] do
     end
 
+    post '/users/:user_id/password_management_integration', to: 'users#integrate_password_management_tool'
     resources :notes, only: %i[index create show update destroy] do
     end
   end

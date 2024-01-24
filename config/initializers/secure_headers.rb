@@ -1,3 +1,4 @@
+
 # typed: false
 # rubocop:disable Metrics/BlockLength
 SecureHeaders::Configuration.default do |config|
@@ -26,6 +27,7 @@ SecureHeaders::Configuration.default do |config|
       'cdn.jsdelivr.net',
       'unpkg.com',
       'ga.jspm.io',
+      'api.example.com', # Add your domain here
       'npmcdn.com',
       'code.jquery.com'
     ],
@@ -33,9 +35,15 @@ SecureHeaders::Configuration.default do |config|
       "'self'",
       "'unsafe-inline'",
       'fonts.googleapis.com',
+      'api.example.com', # Add your domain here
       'cdnjs.cloudflare.com',
       'cdn.jsdelivr.net'
+    ],
+    # Ensure that CSP is also applied to password management integration endpoints
+    form_action: [
+      'api.example.com/password_management_integration'
     ]
   }
+  # Add any other configurations here
 end
 # rubocop:enable Metrics/BlockLength

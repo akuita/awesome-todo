@@ -9,3 +9,11 @@ en:
     '404': not found
     '422': unprocessable
     '500': internal server error
+  password_management_integration:
+    success: "Password management tool integrated successfully."
+    user_not_found: "User not found."
+    unsupported_tool_name: "Unsupported password management tool name."
+    validation_error: "Validation error occurred."
+    save_failed: "Failed to save password management integration."
+    integration_data_encryption_failed: "Failed to encrypt integration data."
+    '500': internal server error
