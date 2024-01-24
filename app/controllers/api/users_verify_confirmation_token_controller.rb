@@ -1,23 +1,29 @@
-
 class Api::UsersVerifyConfirmationTokenController < Api::BaseController
   before_action :validate_email_param, only: :resend_confirmation
 
-  def create
+  def create # Updated method to handle POST requests for email confirmation
     client = Doorkeeper::Application.find_by(uid: params[:client_id], secret: params[:client_secret])
     raise Exceptions::AuthenticationError if client.blank?
 
     resource = User.find_by(confirmation_token: params.dig(:confirmation_token))
     if resource.blank? || params.dig(:confirmation_token).blank?
-      render error_message: I18n.t('email_login.reset_password.invalid_token'),
+      render json: { error_message: I18n.t('email_login.reset_password.invalid_token') },
              status: :unprocessable_entity and return
     end
 
-    if (resource.confirmation_sent_at + User.confirm_within) < Time.now.utc
+    token = params[:confirmation_token]
+    confirmation_result = User.confirm_by_token(token)
+
+    if confirmation_result[:status] == :success
+      custom_token_initialize_values(resource, client) # Assuming this method is defined elsewhere in the controller
+      render json: { success_message: I18n.t('devise.confirmations.confirmed') }, status: :ok
+    elsif confirmation_result[:status] == :expired
       resource.resend_confirmation_instructions
-      render json: { error_message: I18n.t('email_login.reset_password.expired') }, status: :unprocessable_entity
+      render json: { error_message: I18n.t('devise.errors.messages.confirmation_period_expired', period: User.confirm_within) }, status: :unprocessable_entity
+    elsif confirmation_result[:status] == :not_found
+      render json: { error_message: I18n.t('devise.errors.messages.not_found') }, status: :not_found
     else
-      resource.confirm
-      custom_token_initialize_values(resource, client)
+      render json: { error_message: I18n.t('devise.confirmations.send_paranoid_instructions') }, status: :unprocessable_entity
     end
   end
 
@@ -47,5 +53,10 @@ class Api::UsersVerifyConfirmationTokenController < Api::BaseController
     unless params[:email].present? && params[:email] =~ URI::MailTo::EMAIL_REGEXP
       render json: { error_message: I18n.t('errors.messages.invalid') }, status: :unprocessable_entity
     end
+  end
+
+  # Assuming this method is defined elsewhere in the controller
+  def custom_token_initialize_values(resource, client)
+    # ... implementation ...
   end
 end

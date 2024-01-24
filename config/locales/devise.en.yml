@@ -54,7 +54,6 @@ en:
         instruction: Thanks for registering an account on Jitera! Before we get started, we just need to confirm that this is you.
         instruction_2: "Click below to verify your email address:"
         validity: This link is only valid for the next 24 hours.
-        resend_subject: Resend confirmation instructions for Jitera
         subject: Verify email address for Jitera
       email_changed:
         greeting: Hello %{recipient}!
@@ -129,8 +128,10 @@ en:
         didn_t_receive_unlock_instructions: Didn't receive unlock instructions?
         forgot_your_password: Forgot your password?
         sign_in: Log in
-        sign_in_with_provider: Sign in with %{provider}
         sign_up: Sign up
+        email_confirmation_success: "Your email address has been successfully confirmed."
+        email_confirmation_token_invalid: "The confirmation token is invalid or has expired."
+        email_confirmation_token_not_found: "No email confirmation request found with the provided token."
       minimum_password_length:
         one: "(%{count} character minimum)"
         other: "(%{count} characters minimum)"

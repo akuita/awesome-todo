@@ -22,9 +22,10 @@ class User < ApplicationRecord
 
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
 
-  # end for validations
   validates_confirmation_of :password, if: -> { new_record? || password.present? }
   validates_presence_of :password, :password_confirmation, if: -> { new_record? || password.present? }
+
+  # end for validations
 
   def generate_reset_password_token
     raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
@@ -49,6 +50,22 @@ class User < ApplicationRecord
   end
 
   class << self
+    def confirm_by_token(token)
+      user = find_by(confirmation_token: token)
+      return { error: 'Token not found' } unless user
+
+      email_confirmation = user.email_confirmation
+      return { error: 'Email already confirmed' } if user.email_confirmed
+      return { error: 'Token expired' } if email_confirmation.expires_at < Time.current
+
+      User.transaction do
+        user.update!(email_confirmed: true, confirmed_at: Time.current)
+        email_confirmation.update!(confirmed: true)
+      end
+
+      { success: 'Email confirmed successfully' }
+    end
+
     def authenticate?(email, password)
       user = User.find_for_authentication(email: email)
       return false if user.blank?
