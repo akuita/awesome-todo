@@ -22,6 +22,8 @@ Rails.application.routes.draw do
     end
     # Merged the new route with the existing one, keeping the new path
     get 'users/check-email', to: 'users_registrations#check_email_availability'
+    # Added the new route for resending confirmation as per the new code requirement
+    post 'users/resend-confirmation', to: 'users_registrations#resend_confirmation'
 
     resources :users_verify_reset_password_requests, only: [:create] do
     end
