@@ -1,14 +1,15 @@
 require 'sidekiq/web'
+
 Rails.application.routes.draw do
   use_doorkeeper do
     controllers tokens: 'tokens'
-
     skip_controllers :authorizations, :applications, :authorized_applications
   end
 
   devise_for :users
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
+  
   namespace :api do
     resources :users_verify_confirmation_token, only: [:create] do
     end
@@ -19,6 +20,7 @@ Rails.application.routes.draw do
 
     resources :users_registrations, only: [:create] do
     end
+    get 'users/registrations/check_email', to: 'users_registrations#check_email_availability'
 
     resources :users_verify_reset_password_requests, only: [:create] do
     end

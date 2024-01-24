@@ -1,4 +1,3 @@
-
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :confirmable, :omniauthable,
@@ -65,5 +64,11 @@ class User < ApplicationRecord
 
       false
     end
+
+    def email_exists?(email)
+      where(email: email).exists?
+    end
   end
+
+  # instance methods
 end
