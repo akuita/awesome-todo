@@ -1,70 +1,51 @@
+
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
+         :confirmable, :omniauthable,
          :trackable, :recoverable, :lockable
 
   # validations
-  PASSWORD_FORMAT = /\A
-    (?=.*\d)           # Must contain a digit
-    (?=.*[a-z])        # Must contain a lower case character
-    (?=.*[A-Z])        # Must contain an upper case character
-    (?=.*[[:^alnum:]]) # Must contain a symbol
-    .{8,}              # Must be at least 8 characters long
-  \z/x
+
+  PASSWORD_FORMAT = //
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
-  validates :password, confirmation: true, if: -> { new_record? || password.present? }
 
-  # Update the email validation for uniqueness with case insensitive
-  # The length validation for email is removed as it's redundant with the new email validations
-  validates :email, presence: true, uniqueness: { case_sensitive: false }, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :encrypted_password, presence: true, if: -> { new_record? || encrypted_password.present? }
-  validates :sign_in_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, if: -> { sign_in_count.present? }
-  validates :failed_attempts, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, if: -> { failed_attempts.present? }
+  validates :email, presence: true, uniqueness: true
 
-  # associations
-  has_one :email_confirmation_token, class_name: 'EmailConfirmationToken', foreign_key: 'user_id'
+  validates :email, length: { in: 0..255 }, if: :email?
 
-  # callbacks
-  # Add any callbacks like before_save, after_commit, etc here
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
 
-  # scopes
-  # Define any custom scopes here
+  # end for validations
 
-  # methods
-  # Define any custom instance or class methods here
+  # relationships
+  has_one :email_confirmation_token, dependent: :destroy
+  has_one :email_confirmation, dependent: :destroy
+  has_many :notes, dependent: :destroy
+  has_many :todos, dependent: :destroy
+  # end for relationships
+
+  # Class method to find a user by confirmation token
+  def self.find_by_confirmation_token(token)
+    email_confirmation = EmailConfirmation.find_by(token: token, confirmed: false)
+    if email_confirmation && email_confirmation.expires_at > Time.now.utc
+      email_confirmation.user
+    else
+      nil
+    end
+  end
+
+  # Instance method to confirm user's email
+  def confirm_email
+    self.email_confirmed = true
+    self.email_confirmation&.destroy
+    self.touch
+  end
+  # end for instance methods
 
   def generate_reset_password_token
     raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
     self.reset_password_token   = enc
     self.reset_password_sent_at = Time.now.utc
-    save(validate: false)
-    raw
-  end
-
-  def confirm_email(confirmation_token)
-    token_record = email_confirmation_token
-    return false unless token_record && token_record.token == confirmation_token && confirmation_sent_at >= 2.days.ago
-
-    self.email_confirmed = true
-    token_record.destroy
-    save
-  end
-
-  # This method is duplicated in the new code, so we keep only one definition.
-  # The new definition is kept as it includes an update to the `updated_at` field.
-  def confirm_email
-    self.email_confirmed = true
-    self.updated_at = Time.now.utc
-    save
-  end
-
-  def regenerate_confirmation_token
-    token_record = self.email_confirmation_token || self.build_email_confirmation_token
-    raw, enc = Devise.token_generator.generate(self.class, :confirmation_token)
-    token_record.token = enc
-    token_record.expires_at = 2.days.from_now
-    token_record.save!
-    self.confirmation_sent_at = Time.now.utc
-    self.confirmation_token = enc
     save(validate: false)
     raw
   end
@@ -84,7 +65,5 @@ class User < ApplicationRecord
 
       false
     end
-
-    # Define any custom class methods here
   end
 end
