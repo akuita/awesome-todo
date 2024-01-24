@@ -4,14 +4,16 @@ class Api::UsersController < Api::BaseController
 
   SUPPORTED_TOOLS = %w[1Password iCloudPassword].freeze
 
-  # existing actions
-
   def integrate_password_management_tool
     tool_name = params[:tool_name]
     integration_data = params[:integration_data]
 
     unless SUPPORTED_TOOLS.include?(tool_name)
-      return render json: { message: I18n.t('controller.users.unsupported_tool_name') }, status: :unprocessable_entity
+      return render json: { error: I18n.t('controller.users.unsupported_tool_name') }, status: :unprocessable_entity
+    end
+
+    if integration_data.blank?
+      return render json: { error: I18n.t('controller.users.invalid_integration_data') }, status: :unprocessable_entity
     end
 
     integration = @user.password_management_integrations.new(
@@ -20,9 +22,19 @@ class Api::UsersController < Api::BaseController
     )
 
     if integration.save
-      render json: { message: I18n.t('controller.users.integration_success') }, status: :ok
+      render json: {
+        status: :ok,
+        message: I18n.t('controller.users.integration_success'),
+        integration: {
+          id: integration.id,
+          user_id: @user.id,
+          tool_name: integration.tool_name,
+          integration_data: integration.integration_data,
+          created_at: integration.created_at
+        }
+      }, status: :ok
     else
-      render json: { messages: integration.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: integration.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
@@ -72,7 +84,9 @@ class Api::UsersController < Api::BaseController
 
   def set_user
     @user = User.find_by(id: params[:user_id] || params[:email])
-    render json: { message: I18n.t('controller.users.user_not_found') }, status: :not_found unless @user
+    unless @user
+      render json: { error: I18n.t('controller.users.user_not_found') }, status: :not_found
+    end
   end
 
   # other private methods
