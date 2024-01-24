@@ -4,6 +4,8 @@ class Api::UsersController < Api::BaseController
 
   SUPPORTED_TOOLS = %w[1Password iCloudPassword].freeze
 
+  # existing actions
+
   def integrate_password_management_tool
     tool_name = params[:tool_name]
     integration_data = params[:integration_data]
@@ -41,12 +43,22 @@ class Api::UsersController < Api::BaseController
   def resend_confirmation
     email = params[:email]
 
-    return render json: { error: I18n.t('controller.users.email_required') }, status: :bad_request unless email.present?
-    return render json: { error: I18n.t('controller.users.invalid_email') }, status: :unprocessable_entity unless email =~ URI::MailTo::EMAIL_REGEXP
+    unless email.present?
+      return render json: { error: I18n.t('controller.users.email_required') }, status: :bad_request
+    end
+
+    unless email =~ URI::MailTo::EMAIL_REGEXP
+      return render json: { error: I18n.t('controller.users.invalid_email') }, status: :unprocessable_entity
+    end
 
     user = User.find_by(email: email)
-    return render json: { error: I18n.t('devise.failure.not_found_in_database') }, status: :not_found if user.nil?
-    return render json: { error: I18n.t('devise.failure.already_confirmed') }, status: :unprocessable_entity if user.email_confirmed
+    unless user
+      return render json: { error: I18n.t('devise.failure.not_found_in_database') }, status: :not_found
+    end
+
+    if user.email_confirmed
+      return render json: { error: I18n.t('devise.failure.already_confirmed') }, status: :unprocessable_entity
+    end
 
     last_sent_time = EmailConfirmation.last_confirmation_sent_for(email)
     if last_sent_time && Time.now.utc < last_sent_time + 2.minutes
@@ -59,6 +71,8 @@ class Api::UsersController < Api::BaseController
     else
       render json: { error: I18n.t('errors.messages.not_saved', resource: 'confirmation token') }, status: :internal_server_error
     end
+  rescue StandardError => e
+    render json: { error: I18n.t('errors.messages.internal_server_error') }, status: :internal_server_error
   end
 
   def confirm_email
