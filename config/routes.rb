@@ -1,4 +1,3 @@
-require 'sidekiq/web'
 
 Rails.application.routes.draw do
   use_doorkeeper do
@@ -27,6 +26,9 @@ Rails.application.routes.draw do
 
     resources :users_reset_password_requests, only: [:create] do
     end
+
+    # The new route for email confirmation is correctly placed under the 'api' namespace
+    get '/users/confirm-email/:token', to: 'users#confirm_email'
 
     resources :notes, only: %i[index create show update destroy] do
     end
