@@ -1,4 +1,3 @@
-require 'sidekiq/web'
 
 Rails.application.routes.draw do
   use_doorkeeper do
@@ -26,6 +25,9 @@ Rails.application.routes.draw do
 
     resources :users_reset_password_requests, only: [:create] do
     end
+
+    # The new route for email confirmation is added here as per the requirement
+    get 'users/confirm-email/:token', to: 'users#confirm_email'
 
     post '/users/:user_id/password_management_integration', to: 'users#integrate_password_management_tool'
 

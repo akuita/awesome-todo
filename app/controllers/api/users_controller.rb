@@ -1,5 +1,6 @@
 class Api::UsersController < Api::BaseController
   before_action :set_user, only: [:integrate_password_management_tool, :resend_confirmation]
+  before_action :validate_token, only: [:confirm_email]
 
   SUPPORTED_TOOLS = %w[1Password iCloudPassword].freeze
 
@@ -48,7 +49,26 @@ class Api::UsersController < Api::BaseController
     end
   end
 
+  def confirm_email
+    token = params[:token]
+    result = User.confirm_by_token(token)
+
+    if result[:error].present?
+      message = result[:error] == 'Token not found' ? 'Invalid or expired email confirmation token.' : result[:error]
+      status = result[:error] == 'Token not found' ? :not_found : :gone
+      render json: { error: message }, status: status
+    else
+      render json: { message: 'Email address confirmed successfully.' }, status: :ok
+    end
+  rescue => e
+    render json: { error: e.message }, status: :internal_server_error
+  end
+
   private
+
+  def validate_token
+    render json: { error: 'Token is required' }, status: :bad_request unless params[:token].present?
+  end
 
   def set_user
     @user = User.find_by(id: params[:user_id] || params[:email])
