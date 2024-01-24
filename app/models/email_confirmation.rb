@@ -6,7 +6,7 @@ class EmailConfirmation < ApplicationRecord
   validates :user_id, presence: true
 
   # Callbacks
-  before_create :set_defaults
+  before_create :set_defaults, :generate_unique_token
 
   # Instance methods
 
@@ -37,6 +37,12 @@ class EmailConfirmation < ApplicationRecord
   end
 
   private
+
+  def generate_unique_token
+    begin
+      self.token = SecureRandom.urlsafe_base64(20).tr('lIO0', 'sxyz')
+    end while self.class.exists?(token: token)
+  end
 
   def set_defaults
     self.confirmed ||= false

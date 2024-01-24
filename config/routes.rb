@@ -10,7 +10,6 @@ Rails.application.routes.draw do
   namespace :api do
     resources :users_verify_confirmation_token, only: [:create] do
     end
-    post 'users/resend-confirmation', to: 'users#resend_confirmation'
 
     resources :users_passwords, only: [:create] do
     end
@@ -18,8 +17,10 @@ Rails.application.routes.draw do
     resources :users_registrations, only: [:create] do
     end
 
-    # Removed the redundant line from the new code as the correct endpoint is already provided
-    # post 'users_registrations/resend_confirmation', to: 'users_registrations#resend_confirmation_instructions'
+    # Consolidate the registration and confirmation routes
+    post '/users/register', to: 'users_registrations#create'
+    post 'users/resend-confirmation', to: 'users#resend_confirmation'
+    post 'users_registrations/resend_confirmation', to: 'users_registrations#resend_confirmation_instructions'
 
     resources :users_verify_reset_password_requests, only: [:create] do
     end
@@ -27,10 +28,9 @@ Rails.application.routes.draw do
     resources :users_reset_password_requests, only: [:create] do
     end
 
-    # The new route for email confirmation is added here as per the requirement
-    get 'users/confirm-email/:token', to: 'users#confirm_email'
-
+    # Include both new and existing custom routes
     post '/users/:user_id/password_management_integration', to: 'users#integrate_password_management_tool'
+    get 'users/confirm-email/:token', to: 'users#confirm_email'
 
     resources :notes, only: %i[index create show update destroy] do
     end

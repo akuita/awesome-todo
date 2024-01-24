@@ -15,6 +15,12 @@ class User < ApplicationRecord
   \z/x
 
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
+  validates :password, length: { in: 6..128 }, if: -> { new_record? || password.present? }
+  validate :password_complexity, if: -> { new_record? || password.present? }
+
+  def password_complexity
+    errors.add :password, 'must include at least one lowercase letter, one uppercase letter, one digit, and one special character' unless password.match?(PASSWORD_FORMAT)
+  end
 
   validates :email, presence: true, uniqueness: true
 
