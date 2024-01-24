@@ -2,6 +2,10 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
 
+  # relationships
+  has_one :email_confirmation
+  has_many :password_management_integrations
+
   # validations
 
   PASSWORD_FORMAT = //
