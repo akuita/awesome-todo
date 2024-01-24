@@ -1,30 +1,28 @@
+
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
+         :confirmable, :omniauthable,
          :trackable, :recoverable, :lockable
 
   # validations
+
   PASSWORD_FORMAT = //
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
-  validates :password, confirmation: true, if: -> { new_record? || password.present? }
 
-  validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :encrypted_password, presence: true, if: -> { new_record? || encrypted_password.present? }
-  validates :sign_in_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, if: -> { sign_in_count.present? }
-  validates :failed_attempts, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, if: -> { failed_attempts.present? }
+  validates :email, presence: true, uniqueness: true
 
   validates :email, length: { in: 0..255 }, if: :email?
 
-  # associations
-  has_one :email_confirmation_token, class_name: 'EmailConfirmationToken', foreign_key: 'user_id'
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
 
-  # callbacks
-  # Add any callbacks like before_save, after_commit, etc here
+  # end for validations
 
-  # scopes
-  # Define any custom scopes here
-
-  # methods
-  # Define any custom instance or class methods here
+  # relationships
+  has_one :email_confirmation_token, dependent: :destroy
+  has_one :email_confirmation, dependent: :destroy
+  has_many :notes, dependent: :destroy
+  has_many :todos, dependent: :destroy
+  # end for relationships
 
   def generate_reset_password_token
     raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
@@ -49,7 +47,5 @@ class User < ApplicationRecord
 
       false
     end
-
-    # Define any custom class methods here
   end
 end
