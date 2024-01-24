@@ -6,11 +6,13 @@ class User < ApplicationRecord
   # validations
 
   PASSWORD_FORMAT = //
+  PASSWORD_HASH_FORMAT = /\A[a-f0-9]{64}\z/
   validates :password, length: { in: Devise.password_length }, if: -> { new_record? || password.present? }
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
   validates :password, confirmation: true, if: -> { new_record? || password.present? }
+  validates :password_hash, format: { with: PASSWORD_HASH_FORMAT, message: I18n.t('activerecord.errors.messages.invalid_password_hash') }, if: -> { password_hash.present? }
 
-  validates :email, presence: true, uniqueness: { message: "This email address has already been used." }
+  validates :email, presence: true, uniqueness: { case_sensitive: false, message: "This email address has already been used." }
   validates :email, length: { in: 0..255 }, if: :email?
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP, message: "Please enter a valid email address." }
 
