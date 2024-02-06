@@ -69,6 +69,19 @@ module Api
       true
     end
 
+    def create_use_case(project_id, title, description)
+      use_case = UseCase.new(project_id: project_id, title: title, description: description, created_at: Time.current)
+      if use_case.save
+        use_case
+      else
+        base_render_unprocessable_entity(ActiveRecord::RecordInvalid.new(use_case))
+        nil
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      base_render_unprocessable_entity(e)
+      nil
+    end
+
     def custom_token_initialize_values(resource, client)
       token = CustomAccessToken.create(
         application_id: client.id,
@@ -83,9 +96,6 @@ module Api
       @resource_owner = resource.class.name
       @resource_id = resource.id
       @created_at = resource.created_at
-      @refresh_token_expires_in = token.refresh_expires_in
-      @scope = token.scopes
-      # New code additions
       @refresh_token_expires_in = token.refresh_expires_in
       @scope = token.scopes
     end

@@ -22,9 +22,10 @@ namespace :api do
   resources :users_reset_password_requests, only: [:create] do
   end
 
-  post '/projects', to: 'projects#create', as: :create_project
   resources :notes, only: %i[index create show update destroy] do
   end
+
+  post 'use_cases', to: 'base#handle_create_use_case'
 
   post 'users/resend-confirmation', to: 'users_registrations#resend_confirmation_email'
 
@@ -33,6 +34,9 @@ namespace :api do
 
   # Existing route for error reporting
   post 'errors', to: 'errors#create'
+
+  # Existing route for project creation
+  post '/projects', to: 'projects#create', as: :create_project
 end
 
 get '/health' => 'pages#health_check'
