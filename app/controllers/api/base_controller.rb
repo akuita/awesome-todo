@@ -45,6 +45,21 @@ module Api
       render json: { message: I18n.t('common.errors.record_not_uniq_error') }, status: :forbidden
     end
 
+    def handle_import_error(project_id, message)
+      project = Project.find_by(id: project_id)
+      if project.nil?
+        render json: { message: I18n.t('common.404') }, status: :not_found
+        return
+      end
+
+      if message.blank?
+        render json: { message: I18n.t('common.422') }, status: :unprocessable_entity
+        return
+      end
+
+      true
+    end
+
     def custom_token_initialize_values(resource, client)
       token = CustomAccessToken.create(
         application_id: client.id,
