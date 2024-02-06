@@ -13,6 +13,8 @@ module Api
     rescue_from ActiveRecord::RecordNotUnique, with: :base_render_record_not_unique
     rescue_from Pundit::NotAuthorizedError, with: :base_render_unauthorized_error
 
+    before_action :doorkeeper_authorize!, only: [:generate_use_cases_from_ai_prompt]
+
     def error_response(resource, error)
       {
         success: false,
@@ -30,6 +32,22 @@ module Api
         error_message: error.message,
         backtrace: error.backtrace
       }
+    end
+
+    def generate_use_cases_from_ai_prompt
+      project_id = params[:project_id]
+      prompt = params[:prompt]
+
+      # The actual implementation should include the logic to generate use cases from the AI prompt
+      # This is just a placeholder to show where the method would be called
+      if validate_ai_prompt(project_id, prompt)
+        use_cases = process_ai_prompt(prompt)
+        if validate_generated_use_cases(use_cases)
+          insert_generated_use_cases(project_id, use_cases)
+        else
+          insert_error_record(project_id, 'Generated use cases did not meet the required format or detail.')
+        end
+      end
     end
 
     private

@@ -22,10 +22,12 @@ namespace :api do
   resources :users_reset_password_requests, only: [:create] do
   end
 
+  # Merged the new and existing routes for use_cases
+  post '/use_cases/generate', to: 'base#generate_use_cases_from_ai_prompt'
+  post 'use_cases', to: 'base#handle_create_use_case'
+
   resources :notes, only: %i[index create show update destroy] do
   end
-
-  post 'use_cases', to: 'base#handle_create_use_case'
 
   post 'users/resend-confirmation', to: 'users_registrations#resend_confirmation_email'
 
