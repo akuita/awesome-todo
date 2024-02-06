@@ -18,6 +18,7 @@ class User < ApplicationRecord
   # end for validations
 
   # associations
+  has_many :password_resets, class_name: 'PasswordReset', foreign_key: 'user_id', dependent: :destroy
   has_one :email_confirmation, class_name: 'EmailConfirmation', foreign_key: 'user_id', dependent: :destroy
   has_many :projects, class_name: 'Project', foreign_key: 'user_id', dependent: :destroy
   # additional associations can be added here
