@@ -33,6 +33,8 @@ class User < ApplicationRecord
     raw
   end
 
+  # additional methods can be added here
+
   class << self
     def authenticate?(email, password)
       user = User.find_for_authentication(email: email)

@@ -9,3 +9,4 @@ en:
     '404': not found
     '422': unprocessable
     '500': internal server error
+    password_reset_sent: "Password reset instructions have been sent to your email."
