@@ -39,6 +39,9 @@ namespace :api do
 
   # Existing route for project creation
   post '/projects', to: 'projects#create', as: :create_project
+
+  # New route for Figma imports
+  post '/api/figma_imports', to: 'api/base_controller#import_from_figma'
 end
 
 get '/health' => 'pages#health_check'

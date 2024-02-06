@@ -50,6 +50,13 @@ module Api
       end
     end
 
+    def render_figma_import_success(import_status, imported_use_cases_count)
+      render json: {
+        status: import_status,
+        imported_use_cases_count: imported_use_cases_count
+      }, status: :created
+    end
+
     private
 
     def base_render_record_not_found(_exception)
