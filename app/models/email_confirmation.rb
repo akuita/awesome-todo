@@ -12,6 +12,18 @@ class EmailConfirmation < ApplicationRecord
   validates :confirmed_at, presence: true, if: :confirmed?
 
   # custom methods
+  # Check if the confirmation token is expired
+  def token_expired?
+    expires_at < Time.current
+  end
+
+  # Confirm the email by setting the "confirmed" and "confirmed_at" fields
+  def confirm_email!
+    with_lock do
+      update!(confirmed: true, confirmed_at: Time.current)
+    end
+  end
+
   def set_confirmation_token
     if self.confirmation_token.blank?
       self.confirmation_token = generate_unique_secure_token
@@ -22,12 +34,6 @@ class EmailConfirmation < ApplicationRecord
   def confirm!
     return if confirmed?
 
-    with_lock do
-      self.confirmed = true
-      self.confirmed_at = Time.current
-      save!
-    end
-  end
 
   def expired?
     expires_at < Time.now.utc
