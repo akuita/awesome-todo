@@ -1,3 +1,4 @@
+
 # typed: ignore
 module Api
   class BaseController < ActionController::API
@@ -13,14 +14,55 @@ module Api
     rescue_from ActiveRecord::RecordNotUnique, with: :base_render_record_not_unique
     rescue_from Pundit::NotAuthorizedError, with: :base_render_unauthorized_error
 
+    before_action :doorkeeper_authorize!, only: [:generate_use_cases_from_ai_prompt]
+
     def error_response(resource, error)
       {
         success: false,
-        full_messages: resource&.errors&.full_messages,
+        full_messages: resource&.errors&.full_messages&.map do |message|
+          case message
+          when /blank/
+            I18n.t('activerecord.errors.messages.blank')
+          when /too long/
+            I18n.t('activerecord.errors.messages.too_long', count: 255)
+          else
+            message
+          end
+        end,
         errors: resource&.errors,
         error_message: error.message,
         backtrace: error.backtrace
       }
+    end
+    
+    def render_user_registration_success
+      render json: {
+        status: 201,
+        message: I18n.t('devise.registrations.signed_up_but_unconfirmed')
+      }, status: :created
+    end
+
+    def generate_use_cases_from_ai_prompt
+      project_id = params[:project_id]
+      prompt = params[:prompt]
+
+      # The actual implementation should include the logic to generate use cases from the AI prompt
+      # This is just a placeholder to show where the method would be called
+      if validate_ai_prompt(project_id, prompt)
+        use_cases = process_ai_prompt(prompt)
+        if validate_generated_use_cases(use_cases)
+          insert_generated_use_cases(project_id, use_cases)
+        else
+          insert_error_record(project_id, 'Generated use cases did not meet the required format or detail.')
+        end
+      end
+    end
+
+    def render_figma_import_success(import_status, imported_use_cases_count)
+      render json: {
+        status: import_status,
+        imported_use_cases_count: imported_use_cases_count
+      }, status: :created
     end
 
     private
@@ -43,6 +85,34 @@ module Api
 
     def base_render_record_not_unique
       render json: { message: I18n.t('common.errors.record_not_uniq_error') }, status: :forbidden
+    end
+
+    def handle_import_error(project_id, message)
+      project = Project.find_by(id: project_id)
+      if project.nil?
+        render json: { message: I18n.t('common.404') }, status: :not_found
+        return
+      end
+
+      if message.blank?
+        render json: { message: I18n.t('common.422') }, status: :unprocessable_entity
+        return
+      end
+
+      true
+    end
+
+    def create_use_case(project_id, title, description)
+      use_case = UseCase.new(project_id: project_id, title: title, description: description, created_at: Time.current)
+      if use_case.save
+        use_case
+      else
+        base_render_unprocessable_entity(ActiveRecord::RecordInvalid.new(use_case))
+        nil
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      base_render_unprocessable_entity(e)
+      nil
     end
 
     def custom_token_initialize_values(resource, client)

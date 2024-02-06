@@ -1,10 +1,10 @@
 - require 'devise/version'
 p 
-  = t('.greeting', recipient: @email)
+  = t('devise.mailer.confirmation_instructions.greeting', recipient: @user.email)
 
 p 
-  = t('.instruction')
+  = t('devise.mailer.confirmation_instructions.instruction')
 
 p
-  a> href="#{Rails.application.credentials.dig(:frontend_base_url)}/users/confirmations?confirmation_token=#{@token}" #{t('.action')}
+  a> href="#{Rails.application.credentials.dig(:frontend_base_url)}/users/confirmations?confirmation_token=#{@user.confirmation_token}" #{t('devise.mailer.confirmation_instructions.action')}
 br

@@ -24,8 +24,13 @@ class User < ApplicationRecord
 
   # end for associations
 
-  def self.encrypt_password(password)
-    Devise::Encryptor.digest(self, password)
+  # Callbacks
+  after_create :create_email_confirmation
+
+  # Methods
+  def create_email_confirmation
+    token = generate_unique_secure_token
+    create_email_confirmation!(confirmation_token: token, sent_at: Time.current)
   end
 
   def generate_reset_password_token
@@ -34,6 +39,16 @@ class User < ApplicationRecord
     self.reset_password_sent_at = Time.now.utc
     save(validate: false)
     raw
+  end
+
+  def self.encrypt_password(password)
+    Devise::Encryptor.digest(self, password)
+  end
+
+  private
+
+  def generate_unique_secure_token
+    SecureRandom.uuid
   end
 
   class << self

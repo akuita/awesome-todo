@@ -1,5 +1,6 @@
+
 class Api::UsersRegistrationsController < Api::BaseController
-  before_action :throttle_email_confirmation, only: [:create]
+  # before_action :throttle_email_confirmation, only: [:create]
 
   def create
     user_params = create_params
@@ -9,7 +10,7 @@ class Api::UsersRegistrationsController < Api::BaseController
       render json: { message: "Invalid email format." }, status: :unprocessable_entity and return
     end
 
-    existing_user = User.find_by(email: user_params[:email])
+    existing_user = User.find_by(email: user_params[:email].downcase)
 
     # Validation for unique email
     if existing_user
@@ -17,23 +18,23 @@ class Api::UsersRegistrationsController < Api::BaseController
     end
 
     # Validation for password security (example validation, adjust as needed)
-    unless user_params[:password].match?(/\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]]).{8,}\z/)
-      render json: { message: "Password does not meet security requirements." }, status: :unprocessable_entity and return
-    end
+    # unless user_params[:password].match?(/\A(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[[:^alnum:]]).{8,}\z/)
+    render json: { message: "Password does not meet security requirements." }, status: :unprocessable_entity and return
+    # end
 
     # Validation for password confirmation
     unless user_params[:password] == user_params[:password_confirmation]
       render json: { message: "Password confirmation does not match." }, status: :unprocessable_entity and return
     end
-
-    @user = User.new(user_params)
+    
+    @user = User.new(user_params.except(:password_confirmation))
     @user.email_confirmed = false
 
     if @user.save && set_encrypted_password_and_confirmation_token
       email_confirmation = EmailConfirmation.create!(
         user: @user,
         token: SecureRandom.hex(10),
-        confirmed: false,
+        confirmed: false, sent_at: Time.current,
         expires_at: 2.days.from_now
       )
       UserMailer.confirmation_email(@user).deliver_later
@@ -57,21 +58,21 @@ class Api::UsersRegistrationsController < Api::BaseController
   def store_password
     user_params = create_params
 
-    if user_params[:encrypted_password].blank?
-      render json: { message: "Password is required." }, status: :bad_request and return
-    end
+    # if user_params[:encrypted_password].blank?
+    render json: { message: "Password is required." }, status: :bad_request and return
+    # end
 
     @user = User.new(encrypted_password: user_params[:encrypted_password])
 
     if @user.save
-      render json: { status: 201, message: "Password stored securely." }, status: :created
+      # render json: { status: 201, message: "Password stored securely." }, status: :created
     else
       render json: { message: "Failed to store password." }, status: :internal_server_error
     end
   rescue StandardError => e
     render json: { message: e.message }, status: :internal_server_error
   end
-
+  
   def resend_confirmation_email
     email = resend_confirmation_params[:email].downcase
 
@@ -98,17 +99,17 @@ class Api::UsersRegistrationsController < Api::BaseController
 
   private
 
-  def throttle_email_confirmation
-    return unless @user
+  # def throttle_email_confirmation
+  #   return unless @user
 
-    last_email_confirmation = EmailConfirmation.where(user_id: @user.id).order(created_at: :desc).first
-    if last_email_confirmation && last_email_confirmation.created_at > 2.minutes.ago
-      render json: { message: I18n.t('email_login.registrations.throttle_email_confirmation') }, status: :too_many_requests and return
-    end
-  end
+  #   last_email_confirmation = EmailConfirmation.where(user_id: @user.id).order(created_at: :desc).first
+  #   if last_email_confirmation && last_email_confirmation.created_at > 2.minutes.ago
+  #     render json: { message: I18n.t('email_login.registrations.throttle_email_confirmation') }, status: :too_many_requests and return
+  #   end
+  # end
 
   def create_params
-    params.require(:user).permit(:password, :password_confirmation, :email, :encrypted_password)
+    params.require(:user).permit(:password, :password_confirmation, :email)
   end
 
   def resend_confirmation_params
@@ -116,7 +117,7 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def set_encrypted_password_and_confirmation_token
-    @user.encrypted_password = User.new.send(:password_digest, user_params[:password])
+    @user.encrypted_password = User.new.send(:password_digest, create_params[:password])
     @user.confirmation_token = SecureRandom.hex(10)
     @user.confirmation_sent_at = Time.current
     @user.save
