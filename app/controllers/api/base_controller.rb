@@ -16,7 +16,16 @@ module Api
     def error_response(resource, error)
       {
         success: false,
-        full_messages: resource&.errors&.full_messages,
+        full_messages: resource&.errors&.full_messages&.map do |message|
+          case message
+          when /blank/
+            I18n.t('activerecord.errors.messages.blank')
+          when /too long/
+            I18n.t('activerecord.errors.messages.too_long', count: 255)
+          else
+            message
+          end
+        end,
         errors: resource&.errors,
         error_message: error.message,
         backtrace: error.backtrace
@@ -74,6 +83,9 @@ module Api
       @resource_owner = resource.class.name
       @resource_id = resource.id
       @created_at = resource.created_at
+      @refresh_token_expires_in = token.refresh_expires_in
+      @scope = token.scopes
+      # New code additions
       @refresh_token_expires_in = token.refresh_expires_in
       @scope = token.scopes
     end

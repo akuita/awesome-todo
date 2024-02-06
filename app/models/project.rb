@@ -7,4 +7,5 @@ class Project < ApplicationRecord
   has_many :errors
 
   validates :name, presence: true
+  validates :name, length: { maximum: 255 }
 end
