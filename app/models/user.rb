@@ -2,6 +2,7 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable, :confirmable
+  # additional devise modules may be added here if needed
 
   # validations
 
@@ -18,6 +19,8 @@ class User < ApplicationRecord
 
   # associations
   has_one :email_confirmation, class_name: 'EmailConfirmation', foreign_key: 'user_id', dependent: :destroy
+  has_many :projects, class_name: 'Project', foreign_key: 'user_id', dependent: :destroy
+  # additional associations can be added here
 
   # end for associations
 
@@ -42,6 +45,7 @@ class User < ApplicationRecord
       # We will show the error message in TokensController
       return user if user&.access_locked?
 
+      # additional authentication logic can be added here
       false
     end
   end
