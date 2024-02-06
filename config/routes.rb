@@ -11,6 +11,8 @@ namespace :api do
   end
 
   resources :users_passwords, only: [:create] do
+    # Removed duplicate route from new code
+    # post '/api/users_passwords', to: 'users_passwords#create'
   end
 
   resources :users_registrations, only: [:create] do
@@ -19,6 +21,8 @@ namespace :api do
   resources :users_verify_reset_password_requests, only: [:create] do
   end
 
+  # Resolved conflict by removing duplicate route from new code
+  # and keeping the existing route
   post '/api/users_reset_password_requests', to: 'api/users_reset_password_requests#create'
   resources :users_reset_password_requests, only: [:create] do
   end

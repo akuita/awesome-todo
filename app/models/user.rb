@@ -1,4 +1,3 @@
-
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable, :confirmable
@@ -25,6 +24,10 @@ class User < ApplicationRecord
 
   # end for associations
 
+  def self.encrypt_password(password)
+    Devise::Encryptor.digest(self, password)
+  end
+
   def generate_reset_password_token
     raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
     self.reset_password_token   = enc
@@ -32,8 +35,6 @@ class User < ApplicationRecord
     save(validate: false)
     raw
   end
-
-  # additional methods can be added here
 
   class << self
     def authenticate?(email, password)

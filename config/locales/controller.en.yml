@@ -1,4 +1,3 @@
----
 en:
   common:
     '200': success
@@ -9,4 +8,5 @@ en:
     '404': not found
     '422': unprocessable
     '500': internal server error
+    password_created: "Password has been successfully created."
     password_reset_sent: "Password reset instructions have been sent to your email."
