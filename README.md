@@ -70,7 +70,7 @@ docker-compose up
 
 If you want to use Rails without Docker, then follow below steps
 
-Install dependency
+Install dependencies
 
 ```bash
 bundle install
