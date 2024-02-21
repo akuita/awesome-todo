@@ -21,6 +21,8 @@ en:
         less_than_or_equal_to: must be less than or equal to %{count}
         not_an_integer: must be an integer
         other_than: must be other than %{count}
+        profile_picture_format_error: 'Invalid file type. Please upload an image.'
+        bio_length_error: 'Bio cannot exceed 500 characters.'
         taken: has already been taken
         too_long: is too long (maximum is %{count} characters)
         too_short: is too short (minimum is %{count} characters)

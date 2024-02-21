@@ -9,3 +9,7 @@ en:
     '404': not found
     '422': unprocessable
     '500': internal server error
+  profile_update:
+    file_upload_error: "Invalid file type. Please upload an image."
+    bio_length_error: "Bio cannot exceed 500 characters."
+    '500': internal server error
