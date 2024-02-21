@@ -67,19 +67,20 @@ docker-compose up
 ```
 
 ### Local environment without Docker
+
 If you want to use Rails without Docker, then follow below steps
 
 Install dependencies
 
-````bash
+```bash
 bundle install
-````
+```
 
 Start postgres and setup database
 
 ```bash
 bin/rake db:create db:migrate db:seed
-````
+```
 
 Start the app
 
