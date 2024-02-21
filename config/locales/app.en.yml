@@ -5,6 +5,7 @@ en:
       not_found_in_database: Invalid email or password
       old_password_mismatch: Incorrect current password
     registrations:
+      username_already_exists: 'Username already exists.'
       failed_to_sign_up: Failed to sign up
     reset_password:
       expired: The access token expired
@@ -16,3 +17,8 @@ en:
         inactive: Your account is not activated yet
         locked: Your account is locked
       unauthorized_error: Unauthorized
+  user_verification:
+    success: Email verified successfully. You can now log in to your account.
+    error:
+      invalid_or_expired_token: Invalid or expired verification token.
+      token_not_found: The verification token does not exist.
