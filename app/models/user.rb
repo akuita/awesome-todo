@@ -1,4 +1,3 @@
-
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
@@ -6,12 +5,13 @@ class User < ApplicationRecord
   has_one :email_verification, dependent: :destroy
 
   # validations
+  validates :username, presence: true, uniqueness: { message: I18n.t('activerecord.errors.messages.taken') } # New validation added for username
 
   PASSWORD_FORMAT = //
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
 
   validates :email, presence: true, uniqueness: true
-  validates :is_active, inclusion: { in: [true, false] }
+  validates :is_active, inclusion: { in: [true, false] } # Existing validation for is_active
 
   validates :email, length: { in: 0..255 }, if: :email?
 

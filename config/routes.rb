@@ -20,6 +20,7 @@ Rails.application.routes.draw do
 
     resources :users_registrations, only: [:create] do
     end
+    post '/users/register', to: 'users_registrations#create'
     put '/users/:user_id/profile', to: 'users_registrations#update'
 
     resources :users_verify_reset_password_requests, only: [:create] do

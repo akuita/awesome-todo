@@ -1,0 +1,11 @@
+p
+  | Hello #{@resource.username},
+
+p
+  | Click the link below to verify your account and complete the registration process:
+
+div
+  a href="#{Rails.application.credentials.dig(:frontend_base_url)}/users/confirm?confirmation_token=#{@token}" Confirm my account
+
+p
+  | If you did not request this, please ignore this email.

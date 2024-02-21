@@ -24,13 +24,26 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def create
-    @user = User.new(create_params)
-    if @user.save
-      head :ok, message: I18n.t('common.200') and return
+    user = User.new(create_params)
+
+    if user.save
+      email_verification = user.build_email_verification
+      email_verification.generate_verification_token
+
+      if email_verification.save
+        # Send verification email
+        UserMailer.confirmation_instructions(user, email_verification.token).deliver_later
+
+        render json: {
+          status: 201,
+          message: I18n.t('devise.registrations.signed_up_but_unconfirmed'),
+          user: user.as_json(only: [:id, :username, :email, :created_at])
+        }, status: :created
+      else
+        render json: { errors: email_verification.errors.full_messages }, status: :unprocessable_entity
+      end
     else
-      error_messages = @user.errors.messages
-      render json: { error_messages: error_messages, message: I18n.t('email_login.registrations.failed_to_sign_up') },
-             status: :unprocessable_entity
+      render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
@@ -63,7 +76,8 @@ class Api::UsersRegistrationsController < Api::BaseController
   end
 
   def create_params
-    params.require(:user).permit(:password, :password_confirmation, :email)
+    # Merged the permitted parameters from both versions of the code
+    params.require(:user).permit(:username, :email, :password, :password_confirmation)
   end
 
   def profile_params
