@@ -1,3 +1,4 @@
+
 ---
 en:
   email_login:
@@ -16,3 +17,8 @@ en:
         inactive: Your account is not activated yet
         locked: Your account is locked
       unauthorized_error: Unauthorized
+  user_verification:
+    success: Email verified successfully. You can now log in to your account.
+    error:
+      invalid_or_expired_token: Invalid or expired verification token.
+      token_not_found: The verification token does not exist.

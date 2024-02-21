@@ -1,20 +1,27 @@
+
 class Api::UsersVerifyConfirmationTokenController < Api::BaseController
   def create
-    client = Doorkeeper::Application.find_by(uid: params[:client_id], secret: params[:client_secret])
-    raise  Exceptions::AuthenticationError if client.blank?
+    token = params[:token]
+    email_verification = EmailVerification.find_by(token: token)
 
-    resource = User.find_by(confirmation_token: params.dig(:confirmation_token))
-    if resource.blank? || params.dig(:confirmation_token).blank?
-      render error_message: I18n.t('email_login.reset_password.invalid_token'),
-             status: :unprocessable_entity and return
+    if email_verification.nil? || email_verification.expires_at < Time.current || email_verification.is_used
+      render json: { error: I18n.t('user_verification.error.invalid_or_expired_token') }, status: :not_found
+      return
     end
 
-    if (resource.confirmation_sent_at + User.confirm_within) < Time.now.utc
-      resource.resend_confirmation_instructions
-      render json: { error_message: I18n.t('email_login.reset_password.expired') }, status: :unprocessable_entity
-    else
-      resource.confirm
-      custom_token_initialize_values(resource, client)
+    user = email_verification.user
+    if user.nil?
+      render json: { error: I18n.t('user_verification.error.token_not_found') }, status: :not_found
+      return
     end
+
+    user.update!(is_active: true)
+    email_verification.update!(is_used: true)
+
+    render json: { status: 200, message: I18n.t('user_verification.success') }, status: :ok
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
+  rescue StandardError => e
+    render json: { error: e.message }, status: :internal_server_error
   end
 end

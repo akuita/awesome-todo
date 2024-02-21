@@ -1,3 +1,4 @@
+
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
@@ -10,6 +11,7 @@ class User < ApplicationRecord
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
 
   validates :email, presence: true, uniqueness: true
+  validates :is_active, inclusion: { in: [true, false] }
 
   validates :email, length: { in: 0..255 }, if: :email?
 
