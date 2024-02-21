@@ -1,6 +1,7 @@
-
 class Profile < ApplicationRecord
   belongs_to :user, foreign_key: 'user_id'
+
+  attr_accessor :profile_picture_file_path
 
   # validations
   validates :user_id, presence: true

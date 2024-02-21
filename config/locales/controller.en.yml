@@ -1,6 +1,8 @@
----
 en:
   common:
+    errors:
+      invalid_file_type: "Invalid file type. Please upload an image."
+      bio_length_limit: "Bio cannot exceed 500 characters."
     '200': success
     '201': created
     '302': deleted

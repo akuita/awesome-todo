@@ -1,4 +1,3 @@
-
 # typed: ignore
 module Api
   class BaseController < ActionController::API
@@ -8,10 +7,13 @@ module Api
 
     # =======End include module======
 
+    rescue_from Exceptions::InvalidFileTypeError, with: :base_render_invalid_file_type
+    rescue_from Exceptions::BioLengthLimitError, with: :base_render_bio_length_limit
     rescue_from ActiveRecord::RecordNotFound, with: :base_render_record_not_found
     rescue_from ActiveRecord::RecordInvalid, with: :base_render_unprocessable_entity
     rescue_from Exceptions::AuthenticationError, with: :base_render_authentication_error
     rescue_from ActiveRecord::RecordNotUnique, with: :base_render_record_not_unique
+    rescue_from Pundit::NotAuthorizedError, with: :base_render_unauthorized_error
     rescue_from Exceptions::ProfileUpdateError, with: :base_render_profile_update_error
     rescue_from Exceptions::FileUploadError, with: :base_render_file_upload_error
 
@@ -26,6 +28,14 @@ module Api
     end
 
     private
+
+    def base_render_invalid_file_type(exception)
+      render json: { message: exception.message }, status: :unprocessable_entity
+    end
+
+    def base_render_bio_length_limit(exception)
+      render json: { message: exception.message }, status: :unprocessable_entity
+    end
 
     def base_render_record_not_found(_exception)
       render json: { message: I18n.t('common.404') }, status: :not_found
@@ -56,9 +66,6 @@ module Api
       render json: { message: I18n.t('profile_update.file_upload_error'), error_details: exception.message }, status: :unprocessable_entity
     end
 
-    # Add any additional exception handling methods below this line
-
-    # Remember to include any additional modules or concerns
     def custom_token_initialize_values(resource, client)
       token = CustomAccessToken.create(
         application_id: client.id,
