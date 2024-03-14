@@ -104,3 +104,5 @@ If you install and run rails server on your local machine, email will be open im
 Once you created the staging and production environments in Jitera's DevOps menu, you can deploy to staging by pushing a new commit to `develop` branch, and to production by pushing a new commit to `master` branch.
 
 ## DB Dump from Server to local
+
+Please read [notion](https://www.notion.so/iruuzainc/Production-Staging-Dump-from-ECS-containers-6affe4fddec541ee93aba797aab084ed) for DB dump steps
