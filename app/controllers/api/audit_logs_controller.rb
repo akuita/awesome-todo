@@ -1,27 +1,24 @@
 class Api::AuditLogsController < Api::BaseController
-  before_action :authorize_audit_log, only: :index
+  before_action :admin_required
 
-  def index
-    if current_user.admin?
-      audit_logs = AuditLog.all
-      audit_logs = audit_logs.where('timestamp >= ? AND timestamp <= ?', date_range[:start_date], date_range[:end_date]) if params[:dateRange].present?
-      audit_logs = audit_logs.where(user_id: params[:userId]) if params[:userId].present?
-      audit_logs = audit_logs.where(action: params[:actionType]) if params[:actionType].present?
+  def export
+    date_range = params[:dateRange]
+    start_date, end_date = date_range.split('..').map { |date| Date.parse(date) }
+    audit_logs = AuditLog.where(timestamp: start_date.beginning_of_day..end_date.end_of_day)
 
-      render json: audit_logs, each_serializer: AuditLogSerializer
-    else
-      render json: { message: 'You are not authorized to view audit logs.' }, status: :unauthorized
+    csv_data = CSV.generate(headers: true) do |csv|
+      csv << ['ID', 'Action', 'Affected Resource', 'Timestamp', 'User IP', 'User ID']
+      audit_logs.find_each do |log|
+        csv << [log.id, log.action, log.affected_resource, log.timestamp, log.user_ip, log.user_id]
+      end
     end
-  end
 
-  private
+    temp_file = Tempfile.new(['audit_logs', '.csv'])
+    temp_file.write(csv_data)
+    temp_file.rewind
 
-  def date_range
-    start_date, end_date = params[:dateRange].split('..')
-    { start_date: start_date, end_date: end_date }
-  end
+    AuditLogExportJob.perform_later(current_user.email, temp_file.path)
 
-  def authorize_audit_log
-    authorize :audit_log, :index?
+    render json: { message: 'Export initiated. You will receive an email with the download link.' }
   end
 end

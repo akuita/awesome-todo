@@ -45,6 +45,12 @@ module Api
       render json: { message: I18n.t('common.errors.record_not_uniq_error') }, status: :forbidden
     end
 
+    def admin_required
+      unless current_user&.admin?
+        render json: { message: 'Insufficient permissions to perform this action.' }, status: :unauthorized
+      end
+    end
+
     def custom_token_initialize_values(resource, client)
       token = CustomAccessToken.create(
         application_id: client.id,

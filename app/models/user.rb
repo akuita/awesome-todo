@@ -24,6 +24,11 @@ class User < ApplicationRecord
     raw
   end
 
+  # Check if the user has administrative privileges
+  def admin?
+    admin
+  end
+
   class << self
     # Add new methods or update existing methods here
     def authenticate?(email, password)
