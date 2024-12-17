@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable,
          :trackable, :recoverable, :lockable
+  has_many :audit_logs, foreign_key: :user_id
 
   # validations
 
@@ -24,6 +25,7 @@ class User < ApplicationRecord
   end
 
   class << self
+    # Add new methods or update existing methods here
     def authenticate?(email, password)
       user = User.find_for_authentication(email: email)
       return false if user.blank?
