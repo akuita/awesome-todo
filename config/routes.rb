@@ -25,6 +25,7 @@ Rails.application.routes.draw do
     resources :users_reset_password_requests, only: [:create] do
     end
 
+    resources :audit_logs, only: [:index]
     resources :notes, only: %i[index create show update destroy] do
     end
   end
