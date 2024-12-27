@@ -403,6 +403,7 @@ GEM
       actionpack (>= 5.2)
       activesupport (>= 5.2)
       sprockets (>= 3.0.0)
+    squasher (0.8.0)
     temple (0.10.2)
     thor (1.2.2)
     tilt (2.2.0)
@@ -435,6 +436,7 @@ GEM
 
 PLATFORMS
   arm64-darwin-21
+  arm64-darwin-24
 
 DEPENDENCIES
   active_storage_validations
@@ -489,13 +491,14 @@ DEPENDENCIES
   slim
   spring (~> 3.0.0)
   spring-commands-rspec
+  squasher (>= 0.6.0)
   turbo-rails
   tzinfo-data
   web-console (>= 3.3.0)
   webdrivers
 
 RUBY VERSION
-   ruby 3.0.0p0
+   ruby 3.2.2p53
 
 BUNDLED WITH
    2.3.13
