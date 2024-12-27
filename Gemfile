@@ -81,4 +81,3 @@ group :test do
 end
 
 gem 'tzinfo-data', platforms: %w[mingw mswin x64_mingw jruby]
-# jitera-hook-for-pdf-feature
