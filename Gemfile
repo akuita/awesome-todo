@@ -81,4 +81,7 @@ group :test do
 end
 
 gem 'tzinfo-data', platforms: %w[mingw mswin x64_mingw jruby]
-# jitera-hook-for-pdf-feature
+
+group :tools do
+  gem 'squasher', '>= 0.6.0'
+end
