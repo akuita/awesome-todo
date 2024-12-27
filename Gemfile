@@ -79,5 +79,3 @@ group :test do
   gem 'selenium-webdriver'
   gem 'webdrivers'
 end
-
-gem 'tzinfo-data', platforms: %w[mingw mswin x64_mingw jruby]
