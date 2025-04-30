@@ -7,6 +7,8 @@ class Note < ApplicationRecord
 
   # end for validations
 
+  attr_accessor :tag
+
   class << self
   end
 end

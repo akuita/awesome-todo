@@ -46,12 +46,34 @@ RSpec.describe 'Note', type: :request do
 
                 type: :string
 
+            ,
+            'tag' => 'STRING'
+            ,
+            'tag' => 'STRING'
+            ,
+            'tag' => 'STRING'
               },
 
               description: {
 
                 type: :text
 
+              ,
+              tag: {
+                type: :string
+              ,
+              tag: {
+                type: :string
+              ,
+              tag: {
+                type: :string
+              ,
+              tag: {
+                type: :string
+              }
+              }
+              }
+              }
               }
 
             }
