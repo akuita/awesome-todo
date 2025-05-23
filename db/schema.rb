@@ -45,6 +45,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_18_162558) do
   create_table "notes", force: :cascade do |t|
     t.text "description"
     t.string "title"
+    t.string "tags"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
