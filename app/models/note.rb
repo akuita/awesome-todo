@@ -3,6 +3,7 @@ class Note < ApplicationRecord
 
   validates :title, length: { in: 0..255 }, if: :title?
   validates :tags, length: { in: 0..255 }, if: :tags?
+  validates :author, length: { in: 0..255 }, if: :author?
   validates :description, length: { in: 0..65_535 }, if: :description?
 
   # end for validations
