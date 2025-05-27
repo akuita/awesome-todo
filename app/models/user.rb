@@ -8,6 +8,7 @@ class User < ApplicationRecord
   validates :password, format: PASSWORD_FORMAT, if: -> { new_record? || password.present? }
 
   validates :email, presence: true, uniqueness: true
+  validates :phone, presence: true, uniqueness: true
 
   validates :email, length: { in: 0..255 }, if: :email?
 
